@@ -60,6 +60,7 @@ class RefereeIQApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/signup': (context) => const EmailSignUpScreen(),
+        '/challenge': (context) => const ChallengeScreen(),
       },
     );
   }
