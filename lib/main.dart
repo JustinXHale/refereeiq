@@ -1,3 +1,5 @@
+// main.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -9,26 +11,28 @@ import 'screens/shop_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/email_signup_screen.dart';
-import 'screens/ask_sofia_screen.dart'; // Your new Ask Sofia screen
+import 'screens/ask_sofia_screen.dart';
 
 void main() {
-  runApp(RefereeIQApp());
+  runApp(const RefereeIQApp());
 }
 
 class RefereeIQApp extends StatelessWidget {
+  const RefereeIQApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = ColorScheme.fromSeed(
-      seedColor: Color(0xFFFADC44),
+      seedColor: const Color(0xFFFADC44),
       brightness: Brightness.light,
-      primary: Color(0xFFFADC44),
-      onPrimary: Color(0xFF212121),
-      secondary: Color(0xFF212121),
+      primary: const Color(0xFFFADC44),
+      onPrimary: const Color(0xFF212121),
+      secondary: const Color(0xFF212121),
       onSecondary: Colors.white,
       surface: Colors.white,
-      onSurface: Color(0xFF212121),
+      onSurface: const Color(0xFF212121),
       background: Colors.white,
-      onBackground: Color(0xFF212121),
+      onBackground: const Color(0xFF212121),
       error: Colors.red,
       onError: Colors.white,
     );
@@ -44,34 +48,36 @@ class RefereeIQApp extends StatelessWidget {
         appBarTheme: AppBarTheme(
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          elevation: 0, // REMOVE SHADOW / BORDER
-          scrolledUnderElevation: 0, // Material 3 no border on scroll
-          shadowColor: Colors.transparent, // Fully transparent
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
         ),
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => WelcomeScreen(),
-        '/home': (context) => HomeScreen(),
-        '/profile': (context) => ProfileScreen(),
-        '/settings': (context) => SettingsScreen(),
-        '/signup': (context) => EmailSignUpScreen(),
+        '/': (context) => const WelcomeScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/settings': (context) => const SettingsScreen(),
+        '/signup': (context) => const EmailSignUpScreen(),
       },
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static List<Widget> _screens = const [
-    SourcesScreen(),
-    AskSofiaScreen(), // Updated to use your new tabbed screen
-    ChallengeScreen(),
-    ShopScreen(),
+  static final List<Widget> _screens = [
+    const SourcesScreen(),
+    AskSofiaScreen(), // NO CONST — stateful widget!
+    const ChallengeScreen(),
+    const ShopScreen(),
   ];
 
   static const List<Tab> _tabs = [
@@ -92,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
           title: Text(
             'RefereeIQ',
             style: GoogleFonts.inter(
-              textStyle: TextStyle(
+              textStyle: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -103,11 +109,11 @@ class _HomeScreenState extends State<HomeScreen> {
             isScrollable: false,
             indicatorColor: colorScheme.onPrimary,
             labelColor: colorScheme.onPrimary,
-            unselectedLabelColor: Color(0xFF555555),
+            unselectedLabelColor: const Color(0xFF555555),
             tabs: _tabs,
           ),
         ),
-        drawer: AppDrawer(),
+        drawer: const AppDrawer(),
         body: TabBarView(
           children: _screens,
         ),
@@ -117,6 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class AppDrawer extends StatelessWidget {
+  const AppDrawer({super.key});
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -143,22 +151,22 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profile'),
+            leading: const Icon(Icons.person),
+            title: const Text('Profile'),
             onTap: () {
               Navigator.pushNamed(context, '/profile');
             },
           ),
           ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings'),
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
             onTap: () {
               Navigator.pushNamed(context, '/settings');
             },
           ),
           ListTile(
-            leading: Icon(Icons.logout),
-            title: Text('Logout'),
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
             onTap: () {
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
             },

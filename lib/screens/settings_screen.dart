@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key}); // <-- Added const constructor
+
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
@@ -17,7 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(
           'Settings',
           style: GoogleFonts.inter(
-            textStyle: TextStyle(
+            textStyle: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Color(0xFF212121),
@@ -26,17 +28,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Color(0xFF212121)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            Text('Appearance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text('Appearance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SwitchListTile(
-              title: Text('Dark Mode'),
+              title: const Text('Dark Mode'),
               value: _darkMode,
               onChanged: (value) {
                 setState(() {
@@ -44,10 +46,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
               },
             ),
-            SizedBox(height: 16),
-            Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            const Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SwitchListTile(
-              title: Text('Push Notifications'),
+              title: const Text('Push Notifications'),
               value: _notifications,
               onChanged: (value) {
                 setState(() {
@@ -55,16 +57,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
               },
             ),
-            SizedBox(height: 16),
-            Text('Legal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            const Text('Legal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ListTile(
-              title: Text('Privacy Policy'),
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              title: const Text('Privacy Policy'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {},
             ),
             ListTile(
-              title: Text('Terms of Service'),
-              trailing: Icon(Icons.arrow_forward_ios, size: 16),
+              title: const Text('Terms of Service'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {},
             ),
           ],

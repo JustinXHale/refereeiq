@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key}); // <-- Added const constructor
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +34,7 @@ class WelcomeScreen extends StatelessWidget {
                     child: Text(
                       'RefereeIQ',
                       style: GoogleFonts.inter(
-                        textStyle: TextStyle(
+                        textStyle: const TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -42,7 +44,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
 
-                Spacer(),
+                const Spacer(),
 
                 // Google Sign-In Button
                 Padding(
@@ -53,13 +55,13 @@ class WelcomeScreen extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Color(0xFF212121),
-                        minimumSize: Size(double.infinity, 56),
+                        foregroundColor: const Color(0xFF212121),
+                        minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32),
                         ),
                         textStyle: GoogleFonts.inter(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -76,8 +78,8 @@ class WelcomeScreen extends StatelessWidget {
                             height: 24,
                             width: 24,
                           ),
-                          SizedBox(width: 12),
-                          Text('Continue with Google'),
+                          const SizedBox(width: 12),
+                          const Text('Continue with Google'),
                         ],
                       ),
                     ),
@@ -92,14 +94,14 @@ class WelcomeScreen extends StatelessWidget {
                     button: true,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF0D47A1),
+                        backgroundColor: const Color(0xFF0D47A1),
                         foregroundColor: Colors.white,
-                        minimumSize: Size(double.infinity, 56),
+                        minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32),
                         ),
                         textStyle: GoogleFonts.inter(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -108,12 +110,12 @@ class WelcomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushNamed(context, '/email-auth');
                       },
-                      child: Text('Sign Up with Email'),
+                      child: const Text('Sign Up with Email'),
                     ),
                   ),
                 ),
 
-                // Continue as Guest Button (navigates to main screen)
+                // Continue as Guest Button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
                   child: Semantics(
@@ -123,12 +125,12 @@ class WelcomeScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
-                        minimumSize: Size(double.infinity, 56),
+                        minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32),
                         ),
                         textStyle: GoogleFonts.inter(
-                          textStyle: TextStyle(
+                          textStyle: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -137,12 +139,12 @@ class WelcomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushNamed(context, '/home');
                       },
-                      child: Text('Continue as Guest'),
+                      child: const Text('Continue as Guest'),
                     ),
                   ),
                 ),
 
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
               ],
             ),
           ),

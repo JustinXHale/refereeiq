@@ -1,11 +1,20 @@
+// chat_tab.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class ChatTab extends StatefulWidget {
   final Function(List<Map<String, dynamic>>) onSaveConversation;
+  final List<Map<String, dynamic>> messages;
+  final Function(List<Map<String, dynamic>>) onMessagesChanged;
 
-  const ChatTab({super.key, required this.onSaveConversation});
+  const ChatTab({
+    super.key,
+    required this.onSaveConversation,
+    required this.messages,
+    required this.onMessagesChanged,
+  });
 
   @override
   State<ChatTab> createState() => _ChatTabState();
@@ -13,31 +22,39 @@ class ChatTab extends StatefulWidget {
 
 class _ChatTabState extends State<ChatTab> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [];
   bool _isThinking = false;
 
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _messages.add({
+    final updatedMessages = List<Map<String, dynamic>>.from(widget.messages)
+      ..add({
         'sender': 'user',
         'text': text,
         'timestamp': DateTime.now(),
       });
+
+    widget.onMessagesChanged(updatedMessages);
+
+    setState(() {
       _isThinking = true;
     });
 
     _controller.clear();
 
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _messages.add({
+      final updatedMessagesAfterResponse =
+      List<Map<String, dynamic>>.from(updatedMessages)
+        ..add({
           'sender': 'sofia',
           'text': 'This is Sofia\'s response to: "$text"',
           'timestamp': DateTime.now(),
         });
+
+      widget.onMessagesChanged(updatedMessagesAfterResponse);
+
+      setState(() {
         _isThinking = false;
       });
     });
@@ -84,20 +101,18 @@ class _ChatTabState extends State<ChatTab> {
   }
 
   void _clearChat() {
-    setState(() {
-      _messages.clear();
-    });
+    widget.onMessagesChanged([]);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chat cleared!')),
+      const SnackBar(
+        content: Text('Chat cleared!'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
   void _saveConversation() {
-    if (_messages.isEmpty) return;
-    widget.onSaveConversation(_messages);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Conversation saved!')),
-    );
+    if (widget.messages.isEmpty) return;
+    widget.onSaveConversation(widget.messages);
   }
 
   @override
@@ -109,9 +124,9 @@ class _ChatTabState extends State<ChatTab> {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: _messages.length + (_isThinking ? 1 : 0),
+            itemCount: widget.messages.length + (_isThinking ? 1 : 0),
             itemBuilder: (context, index) {
-              if (_isThinking && index == _messages.length) {
+              if (_isThinking && index == widget.messages.length) {
                 return Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
@@ -130,27 +145,42 @@ class _ChatTabState extends State<ChatTab> {
                   ),
                 );
               }
-              final message = _messages[index];
+
+              final message = widget.messages[index];
               return _buildMessage(message);
             },
           ),
         ),
-        if (_messages.isNotEmpty)
+        if (widget.messages.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: _saveConversation,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  textStyle: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: _saveConversation,
+                  icon: const Icon(Icons.star_border, color: Colors.black),
+                  label: Text(
+                    'Save Conversation',
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                child: const Text('Save Conversation'),
-              ),
+                const SizedBox(width: 16),
+                TextButton.icon(
+                  onPressed: _clearChat,
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  label: Text(
+                    'Clear Thread',
+                    style: GoogleFonts.inter(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         Container(
@@ -176,11 +206,6 @@ class _ChatTabState extends State<ChatTab> {
                     ),
                     contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: _clearChat,
-                      tooltip: 'Clear chat',
-                    ),
                   ),
                 ),
               ),
