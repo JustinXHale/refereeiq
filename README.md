@@ -1,2 +1,0 @@
-# RefereeIQ
-Referee Chatbot

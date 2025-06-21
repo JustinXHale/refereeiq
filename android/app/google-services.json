@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "214075105239",
+    "project_id": "refereeiq-69cff",
+    "storage_bucket": "refereeiq-69cff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:214075105239:android:52cb60cd0893212aee3592",
+        "android_client_info": {
+          "package_name": "com.refereeiq.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXep0uA_dPXOSD26BHuo1ghZssUCuH8zY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:214075105239:android:0517401e27386f6cee3592",
+        "android_client_info": {
+          "package_name": "com.refereeiq.refereeiq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXep0uA_dPXOSD26BHuo1ghZssUCuH8zY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
