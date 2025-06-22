@@ -1,9 +1,9 @@
-// cart_item.dart (model)
+// cart_item.dart
 
 class CartItem {
   final Map<String, dynamic> product;
   final String size;
-  final int quantity;
+  int quantity;   // Mutable quantity so it can be updated in cart
 
   CartItem({
     required this.product,
@@ -11,7 +11,5 @@ class CartItem {
     required this.quantity,
   });
 
-  double get totalPrice {
-    return (product['price'] as double) * quantity;
-  }
+  double get totalPrice => product['price'] * quantity;
 }
