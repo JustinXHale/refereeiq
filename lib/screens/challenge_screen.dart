@@ -2,48 +2,51 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'daily_challenge_tab.dart';
+import 'leaderboard_tab.dart';
 
-class ChallengeScreen extends StatefulWidget {
+class ChallengeScreen extends StatelessWidget {
   const ChallengeScreen({super.key});
 
   @override
-  State<ChallengeScreen> createState() => _ChallengeScreenState();
-}
-
-class _ChallengeScreenState extends State<ChallengeScreen> with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     final colorScheme = Theme.of(context).colorScheme;
 
     return DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          // Tab Bar
-          TabBar(
-            indicatorColor: Colors.black,
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            labelStyle: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          Container(
+            color: colorScheme.primary,
+            child: Container(
+              color: colorScheme.primary,
+              child: TabBar(
+                indicator: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.black,
+                labelStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                unselectedLabelStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                tabs: const [
+                  Tab(text: 'Daily Challenge'),
+                  Tab(text: 'Leaderboard'),
+                ],
+              ),
             ),
-            tabs: const [
-              Tab(text: 'Challenges'),
-              Tab(text: 'History'),
-            ],
           ),
-          // Tab Views
           const Expanded(
             child: TabBarView(
               children: [
-                Center(child: Text('Challenges will go here')),
-                Center(child: Text('History will go here')),
+                DailyChallengeTab(),
+                LeaderboardTab(),
               ],
             ),
           ),

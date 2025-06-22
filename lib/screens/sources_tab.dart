@@ -39,7 +39,7 @@ class _SourcesTabState extends State<SourcesTab> with AutomaticKeepAliveClientMi
       'category': 'RefereeIQ',
     },
     {
-      'title': 'Local Club Competition Handbook',
+      'title': 'Pōpolo Game Scenarios',
       'subtitle': 'Operational handbook for local rugby club competitions.',
       'category': 'RefereeIQ',
     },
