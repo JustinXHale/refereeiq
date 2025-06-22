@@ -1,40 +1,42 @@
-// daily_challenge_tab.dart (placeholder version)
+// challenge_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class DailyChallengeTab extends StatelessWidget {
-  const DailyChallengeTab({super.key});
+class ChallengeScreen extends StatelessWidget {
+  const ChallengeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.flag, size: 80, color: colorScheme.primary),
-            const SizedBox(height: 24),
-            Text(
-              'Daily Challenge',
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          // Tab Bar
+          TabBar(
+            indicatorColor: Colors.black,
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.grey,
+            labelStyle: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Coming soon...',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+            tabs: const [
+              Tab(text: 'Daily Challenge'),
+              Tab(text: 'Leaderboard'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                // Daily Challenge tab
+                const Center(child: Text('Daily Challenge will go here')),
+                // Leaderboard tab
+                const Center(child: Text('Leaderboard will go here')),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -183,13 +183,12 @@ class _ChatTabState extends State<ChatTab> {
               ],
             ),
           ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade300),
-            ),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+            left: 12,
+            right: 12,
+            top: 8,
           ),
           child: Row(
             children: [

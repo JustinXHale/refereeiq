@@ -13,9 +13,9 @@ class LeaderboardTab extends StatelessWidget {
 
     final List<Map<String, dynamic>> players = [
       {
-        'name': 'Alex M.',
+        'name': 'Aaron B',
         'affiliation': 'USA Rugby',
-        'team': 'Austin Blacks',
+        'team': 'Charlotte',
         'daily': 15,
         'monthly': 120,
         'lifetime': 520,
@@ -23,19 +23,19 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Taylor R.',
-        'affiliation': 'RFU',
-        'team': 'London Irish',
+        'name': 'Jordan S..',
+        'affiliation': 'USA',
+        'team': 'Team Lightskin',
         'daily': 12,
         'monthly': 90,
         'lifetime': 450,
-        'region': 'UK',
+        'region': 'USA',
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Jordan C.',
-        'affiliation': 'ARU',
-        'team': 'Sydney University',
+        'name': 'Corey J.',
+        'affiliation': 'USA',
+        'team': 'Austin Huns',
         'daily': 10,
         'monthly': 80,
         'lifetime': 400,

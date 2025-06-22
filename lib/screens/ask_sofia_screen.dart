@@ -53,67 +53,53 @@ class _AskSofiaScreenState extends State<AskSofiaScreen>
   }
 
   @override
-  bool get wantKeepAlive => true; // <-- Keeps state even when switching tabs
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // <-- must call this
-    final colorScheme = Theme.of(context).colorScheme;
+    super.build(context);
 
     return DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          Container(
-            color: colorScheme.primary,
-            child: Container(
-              color: colorScheme.primary,
-              child: TabBar(
-                indicator: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(0),
-                ),
-                labelColor: Colors.black,
-                unselectedLabelColor: Colors.black,
-                labelStyle: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-                unselectedLabelStyle: GoogleFonts.inter(
-                  fontSize: 14,
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                tabs: [
-                  const Tab(text: 'Chat'),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Favorites'),
-                        const SizedBox(width: 4),
-                        if (_savedConversations.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _savedConversations.length.toString(),
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+          // Tab Bar
+          TabBar(
+            indicatorColor: Colors.black,
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.grey,
+            labelStyle: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
             ),
+            tabs: [
+              const Tab(text: 'Chat'),
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Favorites'),
+                    const SizedBox(width: 4),
+                    if (_savedConversations.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _savedConversations.length.toString(),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
           Expanded(
             child: TabBarView(

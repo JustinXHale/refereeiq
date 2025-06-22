@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:refereeiq/screens/sources_tab.dart';
 
 import 'screens/welcome_screen.dart';
 import 'screens/chat_screen.dart';
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final List<Widget> _screens = [
-      const SourcesScreen(),
+      const SourcesTab(),
       AskSofiaScreen(),
       const ChallengeScreen(),
       ShopScreen(
