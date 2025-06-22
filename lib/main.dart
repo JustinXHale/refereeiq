@@ -8,10 +8,14 @@ import 'screens/chat_screen.dart';
 import 'screens/sources_screen.dart';
 import 'screens/challenge_screen.dart';
 import 'screens/shop_screen.dart';
+import 'screens/shop_cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/email_signup_screen.dart';
 import 'screens/ask_sofia_screen.dart';
+
+import 'widgets/global_app_bar.dart';
+import 'models/cart_item.dart';
 
 void main() {
   runApp(const RefereeIQApp());
@@ -74,12 +78,16 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static final List<Widget> _screens = [
-    const SourcesScreen(),
-    AskSofiaScreen(), // NO CONST — stateful widget!
-    const ChallengeScreen(),
-    const ShopScreen(),
-  ];
+  List<CartItem> _cart = [];
+
+  void _addToCart(CartItem item) {
+    setState(() {
+      _cart.add(item);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Item added to cart!')),
+    );
+  }
 
   static const List<Tab> _tabs = [
     Tab(icon: Icon(Icons.menu_book), text: 'Sources'),
@@ -92,27 +100,29 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final List<Widget> _screens = [
+      const SourcesScreen(),
+      AskSofiaScreen(),
+      const ChallengeScreen(),
+      ShopScreen(
+        cart: _cart,
+        onAddToCart: _addToCart,
+      ),
+    ];
+
     return DefaultTabController(
       length: _tabs.length,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'RefereeIQ',
-            style: GoogleFonts.inter(
-              textStyle: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        appBar: GlobalAppBar(
+          cartItemCount: _cart.length,
+          onCartPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ShopCartScreen(cart: _cart),
               ),
-            ),
-          ),
-          centerTitle: true,
-          bottom: TabBar(
-            isScrollable: false,
-            indicatorColor: colorScheme.onPrimary,
-            labelColor: colorScheme.onPrimary,
-            unselectedLabelColor: const Color(0xFF555555),
-            tabs: _tabs,
-          ),
+            );
+          },
         ),
         drawer: const AppDrawer(),
         body: TabBarView(
