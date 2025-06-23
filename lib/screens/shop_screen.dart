@@ -25,6 +25,7 @@ class ShopScreen extends StatelessWidget {
       {
         "name": "Rugby Shoes",
         "price": 79.99,
+        'availableSizes': ['Small','Medium','Large','X-Large'],
         "category": "Footwear",
       },
       {
