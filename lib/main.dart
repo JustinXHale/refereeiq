@@ -1,5 +1,3 @@
-// main.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/sources_screen.dart';
-import 'screens/sources_tab.dart'; // ADD THIS IMPORT — needed for SourcesTab
+import 'screens/sources_tab.dart';
 import 'screens/challenge_screen.dart';
 import 'screens/shop_screen.dart';
 import 'screens/shop_cart_screen.dart';
@@ -105,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final List<Widget> _screens = [
-      const SourcesTab(), // <-- you are using SourcesTab() here
+      const SourcesTab(),
       AskSofiaScreen(),
       const ChallengeScreen(),
       ShopScreen(
@@ -116,6 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return DefaultTabController(
       length: _tabs.length,
+      // set initialIndex to 1 so Ask Sofia is the first tab
+      initialIndex: 1,
       child: Scaffold(
         appBar: GlobalAppBar(
           cartItemCount: _cart.length,

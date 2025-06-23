@@ -9,17 +9,23 @@ exports.chatWithGPT = functions
   .runWith({ runtime: "nodejs18", platform: "gcfv1" })
   .https
   .onRequest(async (req, res) => {
-    const userMessage = req.body.message;
+    const userMessage = req.body?.message;
+
+    // Validate input early
+    if (typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+      console.error('Invalid or missing message:', req.body);
+      return res.status(400).json({ error: "Invalid request: 'message' must be a non-empty string" });
+    }
 
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-4o", // or "gpt-3.5-turbo"
+        model: "gpt-4o",
         messages: [{ role: "user", content: userMessage }],
       });
 
       res.json({ reply: response.choices[0].message.content });
     } catch (error) {
-      console.error(error);
+      console.error('OpenAI API error:', error, 'Request body:', req.body);
       res.status(500).send("Error communicating with OpenAI");
     }
   });
