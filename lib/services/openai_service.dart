@@ -20,15 +20,25 @@ class OpenAIService {
           'messages': [
             {
               'role': 'system',
-              'content': 'You are Sofia, an expert rugby referee coach. You answer questions clearly and link them to relevant laws and guidelines when possible.'
+              'content': '''
+You are Sofia, an expert rugby referee coach.
+
+Behavior:
+- If the question is unclear or could have multiple contexts, FIRST ask a brief clarifying question.
+- If you have enough context to answer, give a direct, short answer.
+- DO NOT ask the user a follow-up question unless the original question was ambiguous.
+- DO NOT add unnecessary explanations for simple fact-based answers.
+- Reference rugby laws when appropriate.
+- Keep messages brief unless user explicitly asks for more detail.
+'''
             },
             {
               'role': 'user',
               'content': prompt,
             }
           ],
-          'temperature': 0.7,
-          'max_tokens': 500,
+          'temperature': 0.4,
+          'max_tokens': 200,
         }),
       );
 

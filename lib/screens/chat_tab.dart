@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
 import '../services/openai_service.dart';
 
 class ChatTab extends StatefulWidget {
@@ -22,9 +21,22 @@ class ChatTab extends StatefulWidget {
   State<ChatTab> createState() => _ChatTabState();
 }
 
-class _ChatTabState extends State<ChatTab> {
+class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isThinking = false;
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   void _sendMessage() async {
     final text = _controller.text.trim();
@@ -38,6 +50,7 @@ class _ChatTabState extends State<ChatTab> {
       });
 
     widget.onMessagesChanged(updatedMessages);
+    _scrollToBottom();
 
     setState(() {
       _isThinking = true;
@@ -57,6 +70,7 @@ class _ChatTabState extends State<ChatTab> {
         });
 
       widget.onMessagesChanged(updatedMessagesAfterResponse);
+      _scrollToBottom();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
@@ -125,12 +139,15 @@ class _ChatTabState extends State<ChatTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(vertical: 12),
             itemCount: widget.messages.length + (_isThinking ? 1 : 0),
             itemBuilder: (context, index) {
@@ -230,4 +247,7 @@ class _ChatTabState extends State<ChatTab> {
       ],
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
