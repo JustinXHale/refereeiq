@@ -1,15 +1,21 @@
-// cart_item.dart
+// lib/models/cart_item.dart
 
 class CartItem {
+  /// The product data (e.g., name, price, availableSizes)
   final Map<String, dynamic> product;
-  final String size;
-  int quantity;   // Mutable quantity so it can be updated in cart
+
+  /// Currently selected size for this cart item
+  String size;
+
+  /// Quantity of this item in cart
+  int quantity;
 
   CartItem({
     required this.product,
     required this.size,
-    required this.quantity,
+    this.quantity = 1,
   });
 
-  double get totalPrice => product['price'] * quantity;
+  /// Calculates total price for this item
+  double get totalPrice => ((product['price'] as num) * quantity).toDouble();
 }

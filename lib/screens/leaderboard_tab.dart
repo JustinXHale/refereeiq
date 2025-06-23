@@ -53,7 +53,7 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Jamie M..',
+        'name': 'Jamie M.',
         'affiliation': 'AUS',
         'team': 'Lame-Os, Inc.',
         'daily': 5,
