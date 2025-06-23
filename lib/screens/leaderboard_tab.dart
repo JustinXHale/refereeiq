@@ -13,9 +13,9 @@ class LeaderboardTab extends StatelessWidget {
 
     final List<Map<String, dynamic>> players = [
       {
-        'name': 'Alex M.',
+        'name': 'Aaron B.',
         'affiliation': 'USA Rugby',
-        'team': 'Austin Blacks',
+        'team': 'Charlotte',
         'daily': 15,
         'monthly': 120,
         'lifetime': 520,
@@ -23,9 +23,9 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Taylor R.',
+        'name': 'Jordan S',
         'affiliation': 'RFU',
-        'team': 'London Irish',
+        'team': 'Baltimore Ravens',
         'daily': 12,
         'monthly': 90,
         'lifetime': 450,
@@ -33,9 +33,9 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Jordan C.',
+        'name': 'Corey J.',
         'affiliation': 'ARU',
-        'team': 'Sydney University',
+        'team': 'Austin Huns',
         'daily': 10,
         'monthly': 80,
         'lifetime': 400,
@@ -43,9 +43,9 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Sam K.',
-        'affiliation': 'NZ Rugby',
-        'team': 'Canterbury',
+        'name': 'G.A.R',
+        'affiliation': 'USA',
+        'team': 'USA Rugby',
         'daily': 8,
         'monthly': 70,
         'lifetime': 300,
@@ -53,9 +53,9 @@ class LeaderboardTab extends StatelessWidget {
         'image': 'https://via.placeholder.com/100'
       },
       {
-        'name': 'Jamie B.',
-        'affiliation': 'SARU',
-        'team': 'Cape Town Stormers',
+        'name': 'Jamie M..',
+        'affiliation': 'AUS',
+        'team': 'Lame-Os, Inc.',
         'daily': 5,
         'monthly': 60,
         'lifetime': 250,

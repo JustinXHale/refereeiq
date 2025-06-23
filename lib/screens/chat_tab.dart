@@ -1,5 +1,3 @@
-// chat_tab.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -55,12 +53,10 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     setState(() {
       _isThinking = true;
     });
-
     _controller.clear();
 
     try {
       final responseText = await OpenAIService.sendMessage(text);
-
       final updatedMessagesAfterResponse =
       List<Map<String, dynamic>>.from(updatedMessages)
         ..add({
@@ -83,10 +79,10 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildMessage(Map<String, dynamic> message) {
-    bool isUser = message['sender'] == 'user';
+    final bool isUser = message['sender'] == 'user';
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
     final bubbleColor = isUser ? const Color(0xFFFADC44) : Colors.grey.shade200;
-    final textColor = Colors.black;
+    const textColor = Colors.black;
 
     return Align(
       alignment: alignment,
@@ -103,10 +99,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
           children: [
             Text(
               message['text'],
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                color: textColor,
-              ),
+              style: GoogleFonts.inter(fontSize: 16, color: textColor),
             ),
             const SizedBox(height: 4),
             Text(
@@ -140,111 +133,152 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: widget.messages.length + (_isThinking ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (_isThinking && index == widget.messages.length) {
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(strokeWidth: 2),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Sofia is thinking...',
-                          style: GoogleFonts.inter(fontSize: 14),
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Column(
+        children: [
+          // EMPTY STATE
+          if (widget.messages.isEmpty && !_isThinking) ...[
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: 64,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Ask Sofia anything!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap the send button to start.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            // Message list + Thinking
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                itemCount: widget.messages.length + (_isThinking ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (_isThinking && index == widget.messages.length) {
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(strokeWidth: 2),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Sofia is thinking...',
+                              style: GoogleFonts.inter(fontSize: 14),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    );
+                  }
+                  final message = widget.messages[index];
+                  return _buildMessage(message);
+                },
+              ),
+            ),
+          ],
+
+          // Save / Clear buttons
+          if (widget.messages.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton.icon(
+                    onPressed: _saveConversation,
+                    icon: const Icon(Icons.star_border, color: Colors.black),
+                    label: Text(
+                      'Save Conversation',
+                      style: GoogleFonts.inter(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                );
-              }
+                  const SizedBox(width: 16),
+                  TextButton.icon(
+                    onPressed: _clearChat,
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: Text(
+                      'Clear Thread',
+                      style: GoogleFonts.inter(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
-              final message = widget.messages[index];
-              return _buildMessage(message);
-            },
-          ),
-        ),
-        if (widget.messages.isNotEmpty)
+          // Input row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+              left: 12,
+              right: 12,
+              top: 8,
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton.icon(
-                  onPressed: _saveConversation,
-                  icon: const Icon(Icons.star_border, color: Colors.black),
-                  label: Text(
-                    'Save Conversation',
-                    style: GoogleFonts.inter(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                    decoration: InputDecoration(
+                      hintText: 'Ask Sofia a question...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(32),
+                        borderSide: BorderSide(color: Colors.grey.shade400),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                TextButton.icon(
-                  onPressed: _clearChat,
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  label: Text(
-                    'Clear Thread',
-                    style: GoogleFonts.inter(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  onPressed: _sendMessage,
+                  mini: true,
+                  child: const Icon(Icons.send),
                 ),
               ],
             ),
           ),
-        Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 8,
-            left: 12,
-            right: 12,
-            top: 8,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _sendMessage(),
-                  decoration: InputDecoration(
-                    hintText: 'Ask Sofia a question...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(32),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
-                    ),
-                    contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FloatingActionButton(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                onPressed: _sendMessage,
-                mini: true,
-                child: const Icon(Icons.send),
-              ),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
