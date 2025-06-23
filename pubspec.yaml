@@ -2,7 +2,7 @@ name: refereeiq
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 0.3.1+1
+version: 0.4.0+1
 
 environment:
   sdk: ^3.8.1
@@ -13,6 +13,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_fonts: ^6.1.0
   intl: ^0.18.1
+  http: ^1.2.1
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +26,4 @@ flutter:
   assets:
     - assets/images/sofia.png
     - assets/images/google_icon.png
+    - .env

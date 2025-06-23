@@ -2,11 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:refereeiq/screens/sources_tab.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'screens/welcome_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/sources_screen.dart';
+import 'screens/sources_tab.dart'; // ADD THIS IMPORT — needed for SourcesTab
 import 'screens/challenge_screen.dart';
 import 'screens/shop_screen.dart';
 import 'screens/shop_cart_screen.dart';
@@ -14,11 +15,13 @@ import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/email_signup_screen.dart';
 import 'screens/ask_sofia_screen.dart';
-
 import 'widgets/global_app_bar.dart';
 import 'models/cart_item.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+
   runApp(const RefereeIQApp());
 }
 
@@ -102,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     final List<Widget> _screens = [
-      const SourcesTab(),
+      const SourcesTab(), // <-- you are using SourcesTab() here
       AskSofiaScreen(),
       const ChallengeScreen(),
       ShopScreen(

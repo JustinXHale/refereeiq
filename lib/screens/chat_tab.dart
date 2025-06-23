@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../services/openai_service.dart';
+
 class ChatTab extends StatefulWidget {
   final Function(List<Map<String, dynamic>>) onSaveConversation;
   final List<Map<String, dynamic>> messages;
@@ -24,7 +26,7 @@ class _ChatTabState extends State<ChatTab> {
   final TextEditingController _controller = TextEditingController();
   bool _isThinking = false;
 
-  void _sendMessage() {
+  void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
@@ -43,20 +45,26 @@ class _ChatTabState extends State<ChatTab> {
 
     _controller.clear();
 
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final responseText = await OpenAIService.sendMessage(text);
+
       final updatedMessagesAfterResponse =
       List<Map<String, dynamic>>.from(updatedMessages)
         ..add({
           'sender': 'sofia',
-          'text': 'This is Sofia\'s response to: "$text"',
+          'text': responseText,
           'timestamp': DateTime.now(),
         });
 
       widget.onMessagesChanged(updatedMessagesAfterResponse);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
 
-      setState(() {
-        _isThinking = false;
-      });
+    setState(() {
+      _isThinking = false;
     });
   }
 
