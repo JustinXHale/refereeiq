@@ -1,4 +1,4 @@
-name: refereeiq
+name: RefereeIQ
 description: "RefereeIQ is your pocket‐sized rugby referee coach. 
   Test your knowledge daily with bite-sized challenges,
   review complex laws and scenarios, track your score 
@@ -9,7 +9,7 @@ description: "RefereeIQ is your pocket‐sized rugby referee coach.
   analysis."
 publish_to: 'none'
 
-version: 0.6.0+1
+version: 0.7.0+1
 
 environment:
   sdk: ^3.8.1
