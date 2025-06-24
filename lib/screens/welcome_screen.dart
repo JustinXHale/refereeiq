@@ -1,8 +1,10 @@
+// lib/screens/welcome_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key}); // <-- Added const constructor
+  const WelcomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -26,20 +28,22 @@ class WelcomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App title at the top
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 24.0),
-                    child: Text(
-                      'RefereeIQ',
-                      style: GoogleFonts.inter(
-                        textStyle: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                // App logo at the top
+                Image.asset(
+                  'assets/icons/app_icon.png',
+                  width: 100,
+                  height: 100,
+                ),
+                const SizedBox(height: 16),
+
+                // App title
+                Text(
+                  'RefereeIQ',
+                  style: GoogleFonts.inter(
+                    textStyle: const TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -48,7 +52,8 @@ class WelcomeScreen extends StatelessWidget {
 
                 // Google Sign-In Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32.0, vertical: 12.0),
                   child: Semantics(
                     label: 'Continue with Google',
                     button: true,
@@ -74,7 +79,7 @@ class WelcomeScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
-                            'assets/images/google_icon.png',
+                            'assets/icons/google_icon.png',
                             height: 24,
                             width: 24,
                           ),
@@ -88,7 +93,8 @@ class WelcomeScreen extends StatelessWidget {
 
                 // Email Sign-Up Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32.0, vertical: 8.0),
                   child: Semantics(
                     label: 'Sign up with email',
                     button: true,
@@ -117,7 +123,8 @@ class WelcomeScreen extends StatelessWidget {
 
                 // Continue as Guest Button
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32.0, vertical: 8.0),
                   child: Semantics(
                     label: 'Continue as guest',
                     button: true,

@@ -1,3 +1,5 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,13 +9,13 @@ import 'screens/chat_screen.dart';
 import 'screens/sources_screen.dart';
 import 'screens/sources_tab.dart';
 import 'screens/challenge_screen.dart';
+import 'screens/leaderboard_tab.dart';
 import 'screens/shop_screen.dart';
 import 'screens/shop_cart_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/email_signup_screen.dart';
 import 'screens/ask_sofia_screen.dart';
-import 'widgets/global_app_bar.dart';
 import 'models/cart_item.dart';
 
 Future<void> main() async {
@@ -24,14 +26,16 @@ Future<void> main() async {
 }
 
 class RefereeIQApp extends StatelessWidget {
-  const RefereeIQApp({super.key});
+  const RefereeIQApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Updated brand yellow to #FBD823
+    final Color brandYellow = const Color(0xFFFBD823);
     final ColorScheme colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFFFADC44),
+      seedColor: brandYellow,
       brightness: Brightness.light,
-      primary: const Color(0xFFFADC44),
+      primary: brandYellow,
       onPrimary: const Color(0xFF212121),
       secondary: const Color(0xFF212121),
       onSecondary: Colors.white,
@@ -55,7 +59,6 @@ class RefereeIQApp extends StatelessWidget {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           elevation: 0,
-          scrolledUnderElevation: 0,
           shadowColor: Colors.transparent,
         ),
       ),
@@ -73,7 +76,7 @@ class RefereeIQApp extends StatelessWidget {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -83,9 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<CartItem> _cart = [];
 
   void _addToCart(CartItem item) {
-    setState(() {
-      _cart.add(item);
-    });
+    setState(() => _cart.add(item));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Item added to cart!')),
     );
@@ -101,90 +102,118 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     final List<Widget> _screens = [
       const SourcesTab(),
-      AskSofiaScreen(),
+      const AskSofiaScreen(),
       const ChallengeScreen(),
-      ShopScreen(
-        cart: _cart,
-        onAddToCart: _addToCart,
-      ),
+      ShopScreen(cart: _cart, onAddToCart: _addToCart),
     ];
 
     return DefaultTabController(
       length: _tabs.length,
-      // set initialIndex to 1 so Ask Sofia is the first tab
       initialIndex: 1,
       child: Scaffold(
-        appBar: GlobalAppBar(
-          cartItemCount: _cart.length,
-          onCartPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ShopCartScreen(cart: _cart),
+        appBar: AppBar(
+          centerTitle: true,
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/icons/app_icon.png',
+                width: 32,
+                height: 32,
               ),
-            );
-          },
+              const SizedBox(width: 8),
+              Text(
+                'RefereeIQ',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ShopCartScreen(cart: _cart),
+                      ),
+                    );
+                  },
+                ),
+                if (_cart.isNotEmpty)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${_cart.length}',
+                        style: const TextStyle(fontSize: 10, color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
         drawer: const AppDrawer(),
-        body: TabBarView(
-          children: _screens,
-        ),
+        body: TabBarView(children: _screens),
       ),
     );
   }
 }
 
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key});
+  const AppDrawer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: colorScheme.primary,
-            ),
-            child: Center(
-              child: Text(
-                'RefereeIQ',
-                style: GoogleFonts.inter(
-                  textStyle: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onPrimary,
+            decoration: BoxDecoration(color: colorScheme.primary),
+            child: Row(
+              children: [
+                Image.asset('assets/icons/app_icon.png', width: 40, height: 40),
+                const SizedBox(width: 12),
+                Text(
+                  'RefereeIQ',
+                  style: GoogleFonts.inter(
+                    textStyle: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onPrimary,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
           ListTile(
             leading: const Icon(Icons.person),
             title: const Text('Profile'),
-            onTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
+            onTap: () => Navigator.pushNamed(context, '/profile'),
           ),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
-            onTap: () {
-              Navigator.pushNamed(context, '/settings');
-            },
+            onTap: () => Navigator.pushNamed(context, '/settings'),
           ),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
-            onTap: () {
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            },
+            onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false),
           ),
         ],
       ),
