@@ -1,8 +1,15 @@
 name: refereeiq
-description: "A new Flutter project."
+description: "RefereeIQ is your pocket‐sized rugby referee coach. 
+  Test your knowledge daily with bite-sized challenges,
+  review complex laws and scenarios, track your score 
+  and ranking, and compare with fellow referees on the
+  integrated leaderboard. Perfect for referees, coaches,
+  players, and fans who want to deepen their understanding
+  of the game’s laws with interactive quizzes and video 
+  analysis."
 publish_to: 'none'
 
-version: 0.5.3+3
+version: 0.6.0+1
 
 environment:
   sdk: ^3.8.1

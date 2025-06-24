@@ -1,38 +1,245 @@
-// daily_challenge_tab.dart (placeholder version)
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class DailyChallengeTab extends StatelessWidget {
-  const DailyChallengeTab({super.key});
+class ChallengeQuestion {
+  final String prompt;
+  final List<String> options;
+  final int correctIndex;
+  final int points;
+  final String? videoUrl;
+  int selectedIndex = -1;
+
+  ChallengeQuestion({
+    required this.prompt,
+    required this.options,
+    required this.correctIndex,
+    required this.points,
+    this.videoUrl,
+  });
+}
+
+class DailyChallengeTab extends StatefulWidget {
+  const DailyChallengeTab({Key? key}) : super(key: key);
+
+  @override
+  State<DailyChallengeTab> createState() => _DailyChallengeTabState();
+}
+
+class _DailyChallengeTabState extends State<DailyChallengeTab> {
+  final List<ChallengeQuestion> _questions = [
+    ChallengeQuestion(
+      prompt: 'What is the maximum points for a penalty goal?',
+      options: ['1', '2', '3', '4'],
+      correctIndex: 2,
+      points: 3,
+    ),
+    ChallengeQuestion(
+      prompt: 'Watch this scrum technique and identify the incorrect bind.',
+      options: ['A: Shoulder bind', 'B: Arm bind', 'C: Wrist bind', 'D: Hand bind'],
+      correctIndex: 1,
+      points: 5,
+      videoUrl: 'https://example.com/scrum.mp4',
+    ),
+    ChallengeQuestion(
+      prompt: 'Which law allows a quick throw-in?',
+      options: ['Law 15', 'Law 16', 'Law 17', 'Law 18'],
+      correctIndex: 2,
+      points: 3,
+    ),
+    ChallengeQuestion(
+      prompt: 'In a ruck, can a player use their feet to win the ball?',
+      options: ['Yes', 'Only behind the ball', 'No', 'Only in bound area'],
+      correctIndex: 2,
+      points: 5,
+    ),
+    ChallengeQuestion(
+      prompt: 'Which score gives 5 points?',
+      options: ['Drop goal', 'Try', 'Penalty', 'Conversion'],
+      correctIndex: 1,
+      points: 7,
+    ),
+  ];
+
+  int _currentIndex = 0;
+  bool _isSubmitted = false;
+  bool _isFinished = false;
+  int _totalPoints = 0;
+
+  int get _maxPoints => _questions.fold(0, (sum, q) => sum + q.points);
+
+  void _handleSubmit() {
+    setState(() {
+      _isSubmitted = true;
+      final q = _questions[_currentIndex];
+      if (q.selectedIndex == q.correctIndex) {
+        _totalPoints += q.points;
+      }
+    });
+  }
+
+  void _handleNextOrFinish() {
+    if (_currentIndex < _questions.length - 1) {
+      setState(() {
+        _currentIndex++;
+        _isSubmitted = false;
+      });
+    } else {
+      setState(() {
+        _isFinished = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    if (_isFinished) {
+      return _buildCongratulations(colorScheme);
+    }
+
+    final q = _questions[_currentIndex];
+    final isLast = _currentIndex == _questions.length - 1;
+
+    return SafeArea(
+      bottom: true,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Question ${_currentIndex + 1} of ${_questions.length}',
+                  style: GoogleFonts.inter(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 12),
+                if (q.videoUrl != null) ...[
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        size: 64,
+                        color: Colors.black38,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Text(
+                  q.prompt,
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Question Points: ${q.points}', style: GoogleFonts.inter(fontSize: 14)),
+                    Text('Total Points: $_totalPoints', style: GoogleFonts.inter(fontSize: 14)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Options
+          ...List.generate(q.options.length, (i) {
+            final isSelected = q.selectedIndex == i;
+            Color bg;
+            if (_isSubmitted) {
+              if (i == q.correctIndex) bg = Colors.green.shade200;
+              else if (isSelected) bg = Colors.red.shade200;
+              else bg = Colors.grey.shade200;
+            } else {
+              bg = isSelected ? colorScheme.primary.withOpacity(0.3) : Colors.grey.shade200;
+            }
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: GestureDetector(
+                onTap: _isSubmitted ? null : () => setState(() => q.selectedIndex = i),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(q.options[i], style: GoogleFonts.inter(fontSize: 16)),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 24),
+          // Buttons
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      disabledForegroundColor: Colors.grey.shade600,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                    ),
+                    onPressed: (q.selectedIndex == -1 || _isSubmitted) ? null : _handleSubmit,
+                    child: Text('Submit', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      disabledForegroundColor: Colors.grey.shade600,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                    ),
+                    onPressed: _isSubmitted ? _handleNextOrFinish : null,
+                    child: Text(
+                      _isSubmitted ? (isLast ? 'Finish' : 'Next') : 'Next',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCongratulations(ColorScheme colorScheme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.flag, size: 80, color: colorScheme.primary),
+            Icon(Icons.emoji_events, size: 80, color: colorScheme.primary),
             const SizedBox(height: 24),
-            Text(
-              'Daily Challenge',
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text('Congratulations!', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Text('You scored $_totalPoints out of $_maxPoints.', style: GoogleFonts.inter(fontSize: 18), textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            Text(
-              'Coming soon...',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
+            Text('Rank today: #1', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600)),
+            const SizedBox(height: 32),
+            Text('Check out today’s leaderboard via the Leaderboard tab.', textAlign: TextAlign.center),
           ],
         ),
       ),
