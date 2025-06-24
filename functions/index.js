@@ -11,6 +11,9 @@ exports.chatWithGPT = functions
   .onRequest(async (req, res) => {
     const userMessage = req.body?.message;
 
+    // 🟡 Debug log — will show in firebase functions:log
+    console.log("Received userMessage:", userMessage);
+
     // Validate input early
     if (typeof userMessage !== 'string' || userMessage.trim().length === 0) {
       console.error('Invalid or missing message:', req.body);
@@ -21,6 +24,7 @@ exports.chatWithGPT = functions
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "user", content: userMessage }],
+        max_tokens: 300,
       });
 
       res.json({ reply: response.choices[0].message.content });

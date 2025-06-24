@@ -37,8 +37,16 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   }
 
   void _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    final text = (_controller.text ?? '').trim();
+
+    debugPrint('Sending message: $text');
+
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a message!')),
+      );
+      return;
+    }
 
     final updatedMessages = List<Map<String, dynamic>>.from(widget.messages)
       ..add({
@@ -140,7 +148,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
       bottom: true,
       child: Column(
         children: [
-          // EMPTY STATE
           if (widget.messages.isEmpty && !_isThinking) ...[
             Expanded(
               child: Center(
@@ -173,7 +180,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
               ),
             ),
           ] else ...[
-            // Message list + Thinking
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
@@ -206,7 +212,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
             ),
           ],
 
-          // Save / Clear buttons
           if (widget.messages.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -241,7 +246,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
             ),
           ],
 
-          // Input row
           Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom + 8,
@@ -262,7 +266,8 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                         borderRadius: BorderRadius.circular(32),
                         borderSide: BorderSide(color: Colors.grey.shade400),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16),
                     ),
                   ),
                 ),
