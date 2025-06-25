@@ -65,7 +65,9 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     _controller.clear();
 
     try {
-      final responseText = await OpenAIService.sendMessage(text);
+      // 🔸 Send full message history now:
+      final responseText = await OpenAIService.sendMessage(updatedMessages);
+
       final updatedMessagesAfterResponse =
       List<Map<String, dynamic>>.from(updatedMessages)
         ..add({

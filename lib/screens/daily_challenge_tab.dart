@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChallengeQuestion {
   final String prompt;
@@ -25,7 +26,8 @@ class DailyChallengeTab extends StatefulWidget {
   State<DailyChallengeTab> createState() => _DailyChallengeTabState();
 }
 
-class _DailyChallengeTabState extends State<DailyChallengeTab> {
+class _DailyChallengeTabState extends State<DailyChallengeTab>
+    with AutomaticKeepAliveClientMixin {
   final List<ChallengeQuestion> _questions = [
     ChallengeQuestion(
       prompt: 'What is the maximum points for a penalty goal?',
@@ -35,7 +37,12 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
     ),
     ChallengeQuestion(
       prompt: 'Watch this scrum technique and identify the incorrect bind.',
-      options: ['A: Shoulder bind', 'B: Arm bind', 'C: Wrist bind', 'D: Hand bind'],
+      options: [
+        'A: Shoulder bind',
+        'B: Arm bind',
+        'C: Wrist bind',
+        'D: Hand bind'
+      ],
       correctIndex: 1,
       points: 5,
       videoUrl: 'https://example.com/scrum.mp4',
@@ -48,7 +55,12 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
     ),
     ChallengeQuestion(
       prompt: 'In a ruck, can a player use their feet to win the ball?',
-      options: ['Yes', 'Only behind the ball', 'No', 'Only in bound area'],
+      options: [
+        'Yes',
+        'Only behind the ball',
+        'No',
+        'Only in bound area'
+      ],
       correctIndex: 2,
       points: 5,
     ),
@@ -56,7 +68,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
       prompt: 'Which score gives 5 points?',
       options: ['Drop goal', 'Try', 'Penalty', 'Conversion'],
       correctIndex: 1,
-      points: 7,
+      points: 5,
     ),
   ];
 
@@ -64,8 +76,38 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
   bool _isSubmitted = false;
   bool _isFinished = false;
   int _totalPoints = 0;
-
   int get _maxPoints => _questions.fold(0, (sum, q) => sum + q.points);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChallengeState();
+  }
+
+  Future<void> _loadChallengeState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final todayKey = _todayKey();
+
+    if (prefs.getBool('challenge_done_$todayKey') == true) {
+      setState(() {
+        _isFinished = true;
+        _totalPoints = prefs.getInt('challenge_score_$todayKey') ?? 0;
+      });
+    }
+  }
+
+  Future<void> _saveChallengeState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final todayKey = _todayKey();
+
+    await prefs.setBool('challenge_done_$todayKey', true);
+    await prefs.setInt('challenge_score_$todayKey', _totalPoints);
+  }
+
+  String _todayKey() {
+    final now = DateTime.now();
+    return '${now.year}${now.month}${now.day}';
+  }
 
   void _handleSubmit() {
     setState(() {
@@ -77,7 +119,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
     });
   }
 
-  void _handleNextOrFinish() {
+  void _handleNextOrFinish() async {
     if (_currentIndex < _questions.length - 1) {
       setState(() {
         _currentIndex++;
@@ -87,11 +129,13 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
       setState(() {
         _isFinished = true;
       });
+      await _saveChallengeState();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     if (_isFinished) {
@@ -106,7 +150,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // Header
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -152,17 +195,21 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
               ],
             ),
           ),
-          // Options
           ...List.generate(q.options.length, (i) {
             final isSelected = q.selectedIndex == i;
             Color bg;
             if (_isSubmitted) {
-              if (i == q.correctIndex) bg = Colors.green.shade200;
-              else if (isSelected) bg = Colors.red.shade200;
-              else bg = Colors.grey.shade200;
+              if (i == q.correctIndex) {
+                bg = Colors.green.shade200;
+              } else if (isSelected) {
+                bg = Colors.red.shade200;
+              } else {
+                bg = Colors.grey.shade200;
+              }
             } else {
               bg = isSelected ? colorScheme.primary.withOpacity(0.3) : Colors.grey.shade200;
             }
+
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: GestureDetector(
@@ -179,7 +226,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
             );
           }),
           const SizedBox(height: 24),
-          // Buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -245,4 +291,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
