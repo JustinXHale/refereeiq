@@ -2,10 +2,27 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  // Replace this with your actual Cloud Function URL:
   static const String _functionUrl = 'https://us-central1-refereeiq-69cff.cloudfunctions.net/chatWithGPT';
 
-  static Future<String> sendMessage(String prompt) async {
+  static Future<String> sendMessage(List<Map<String, dynamic>> messages) async {
+    // Build the list for OpenAI format
+    final openaiMessages = [
+      {
+        'role': 'system',
+        'content': 'You are Sofia, an expert rugby referee coach helping users deeply understand rugby laws and decisions. '
+            'When a user asks a vague or broad question, first ask clarifying follow-up questions before giving an answer. '
+            'Only provide final answers after gathering enough context. '
+            'Link your responses to relevant laws or guidelines when possible. '
+            'Keep answers short and clear. Only answer questions about rugby union — politely decline unrelated questions.'
+      },
+      ...messages.map((msg) {
+        return {
+          'role': msg['sender'] == 'user' ? 'user' : 'assistant',
+          'content': msg['text']
+        };
+      }).toList(),
+    ];
+
     try {
       final response = await http.post(
         Uri.parse(_functionUrl),
@@ -13,7 +30,7 @@ class OpenAIService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'message': prompt,
+          'messages': openaiMessages,
         }),
       );
 

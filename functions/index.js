@@ -1,7 +1,6 @@
 const functions = require('firebase-functions');
-const { OpenAI } = require('openai');
+const OpenAI = require('openai');
 
-// Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: functions.config().openai.key,
 });
@@ -10,15 +9,15 @@ exports.chatWithGPT = functions
   .runWith({ runtime: "nodejs18", platform: "gcfv1" })
   .https
   .onRequest(async (req, res) => {
-    const userMessage = req.body?.message;
+    const userMessages = req.body?.messages;
 
-    // 🟡 Debug log
-    console.log("Received userMessage:", userMessage);
+    // 🟡 Debug log — will show in firebase functions:log
+    console.log("Received userMessages:", userMessages);
 
     // Validate input early
-    if (typeof userMessage !== 'string' || userMessage.trim().length === 0) {
-      console.error('Invalid or missing message:', req.body);
-      return res.status(400).json({ error: "Invalid request: 'message' must be a non-empty string" });
+    if (!Array.isArray(userMessages) || userMessages.length === 0) {
+      console.error('Invalid or missing messages array:', req.body);
+      return res.status(400).json({ error: "Invalid request: 'messages' must be a non-empty array" });
     }
 
     try {
@@ -27,24 +26,21 @@ exports.chatWithGPT = functions
         messages: [
           {
             role: "system",
-            content:
-              "You are Sofia, an expert rugby union referee coach helping users deeply understand rugby laws and decisions. " +
-              "When a user asks a vague or broad question, first ask clarifying follow-up questions before giving an answer. " +
-              "Only provide final answers after gathering enough context. " +
-              "Do not answer questions unrelated to rugby union. Politely explain that you only answer rugby union questions. " +
-              "Link responses to relevant laws or guidelines when possible. " +
-              "Keep answers short, clear, and suitable for a messaging format.",
+            content: `You are Sofia, an expert Rugby Union referee coach.
+You help users deeply understand rugby laws, referee decisions, and positioning.
+When users ask vague or broad questions, you ask clarifying follow-up questions before answering.
+You only provide final answers after gathering enough context.
+You never answer questions unrelated to rugby.
+You reference rugby laws when possible.
+Keep your answers short and clear, like a text message.`,
           },
-          { role: "user", content: userMessage },
+          ...userMessages
         ],
-        temperature: 0.55,
         max_tokens: 300,
+        temperature: 0.6,
       });
 
-      const reply = response.choices[0]?.message?.content?.trim();
-      console.log("AI reply:", reply);
-
-      res.json({ reply: reply });
+      res.json({ reply: response.choices[0].message.content });
     } catch (error) {
       console.error('OpenAI API error:', error, 'Request body:', req.body);
       res.status(500).send("Error communicating with OpenAI");
