@@ -4,17 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'screens/welcome_screen.dart';
 import 'screens/chat_screen.dart';
-import 'screens/sources_screen.dart';
-import 'screens/sources_tab.dart';
 import 'screens/challenge_screen.dart';
-import 'screens/shop_screen.dart';
-import 'screens/shop_cart_screen.dart';
+import 'screens/leaderboard_tab.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/email_signup_screen.dart';
 import 'screens/ask_sofia_screen.dart';
 import 'widgets/global_app_bar.dart';
-import 'models/cart_item.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,54 +76,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<CartItem> _cart = [];
-
-  void _addToCart(CartItem item) {
-    setState(() {
-      _cart.add(item);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Item added to cart!')),
-    );
-  }
-
   static const List<Tab> _tabs = [
-    Tab(icon: Icon(Icons.menu_book), text: 'Sources'),
     Tab(icon: Icon(Icons.chat), text: 'Ask Sofia'),
     Tab(icon: Icon(Icons.flag), text: 'Challenge'),
-    Tab(icon: Icon(Icons.shopping_cart), text: 'Shop'),
+    Tab(icon: Icon(Icons.leaderboard), text: 'Leaderboard'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     final List<Widget> _screens = [
-      const SourcesTab(),
       AskSofiaScreen(),
       const ChallengeScreen(),
-      ShopScreen(
-        cart: _cart,
-        onAddToCart: _addToCart,
-      ),
+      const LeaderboardTab(),
     ];
 
     return DefaultTabController(
       length: _tabs.length,
-      // set initialIndex to 1 so Ask Sofia is the first tab
-      initialIndex: 1,
+      initialIndex: 0,
       child: Scaffold(
-        appBar: GlobalAppBar(
-          cartItemCount: _cart.length,
-          onCartPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ShopCartScreen(cart: _cart),
-              ),
-            );
-          },
-        ),
+        appBar: GlobalAppBar(),
         drawer: const AppDrawer(),
         body: TabBarView(
           children: _screens,
