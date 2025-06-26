@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'daily_challenge_tab.dart';
 import 'leaderboard_tab.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/firestore_service.dart';
+
 
 class ChallengeScreen extends StatelessWidget {
   const ChallengeScreen({super.key});

@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'refereeiq-69cff',
     storageBucket: 'refereeiq-69cff.firebasestorage.app',
   );
+
 }

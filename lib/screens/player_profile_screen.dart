@@ -1,4 +1,4 @@
-// player_profile_screen.dart (cleaned up)
+// player_profile_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,13 +33,14 @@ class PlayerProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundImage: NetworkImage(player['image']),
+              const CircleAvatar(
+                backgroundColor: Colors.black12,
                 radius: 50,
+                child: Icon(Icons.person, size: 50, color: Colors.black54),
               ),
               const SizedBox(height: 16),
               Text(
-                player['name'],
+                player['displayName'] ?? 'Unknown',
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -47,7 +48,7 @@ class PlayerProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Affiliation: ${player['affiliation']}',
+                'Affiliation: ${player['affiliation'] ?? 'N/A'}',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   color: Colors.grey.shade700,
@@ -55,7 +56,7 @@ class PlayerProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Team: ${player['team']}',
+                'Score: ${player['score'] ?? 0}',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   color: Colors.grey.shade700,

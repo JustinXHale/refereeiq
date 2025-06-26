@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../services/firestore_service.dart';
 
 class ChallengeQuestion {
   final String prompt;
@@ -20,7 +23,7 @@ class ChallengeQuestion {
 }
 
 class DailyChallengeTab extends StatefulWidget {
-  const DailyChallengeTab({Key? key}) : super(key: key);
+  const DailyChallengeTab({super.key});
 
   @override
   State<DailyChallengeTab> createState() => _DailyChallengeTabState();
@@ -28,45 +31,30 @@ class DailyChallengeTab extends StatefulWidget {
 
 class _DailyChallengeTabState extends State<DailyChallengeTab>
     with AutomaticKeepAliveClientMixin {
+  final _firestoreService = FirestoreService();
+  final _auth = FirebaseAuth.instance;
+
   final List<ChallengeQuestion> _questions = [
     ChallengeQuestion(
-      prompt: 'What is the maximum points for a penalty goal?',
-      options: ['1', '2', '3', '4'],
-      correctIndex: 2,
-      points: 3,
-    ),
-    ChallengeQuestion(
-      prompt: 'Watch this scrum technique and identify the incorrect bind.',
-      options: [
-        'A: Shoulder bind',
-        'B: Arm bind',
-        'C: Wrist bind',
-        'D: Hand bind'
-      ],
-      correctIndex: 1,
-      points: 5,
-      videoUrl: 'https://example.com/scrum.mp4',
-    ),
-    ChallengeQuestion(
-      prompt: 'Which law allows a quick throw-in?',
-      options: ['Law 15', 'Law 16', 'Law 17', 'Law 18'],
-      correctIndex: 2,
-      points: 3,
-    ),
-    ChallengeQuestion(
-      prompt: 'In a ruck, can a player use their feet to win the ball?',
-      options: [
-        'Yes',
-        'Only behind the ball',
-        'No',
-        'Only in bound area'
-      ],
-      correctIndex: 2,
+      prompt: 'What is the correct decision when a knock-on occurs?',
+      options: ['Scrum', 'Penalty', 'Lineout', 'Free Kick'],
+      correctIndex: 0,
       points: 5,
     ),
     ChallengeQuestion(
-      prompt: 'Which score gives 5 points?',
-      options: ['Drop goal', 'Try', 'Penalty', 'Conversion'],
+      prompt: 'What happens if a player is offside?',
+      options: [
+        'Penalty to the opposition',
+        'Free kick to the player’s team',
+        'Scrum to the player’s team',
+        'No consequence'
+      ],
+      correctIndex: 0,
+      points: 5,
+    ),
+    ChallengeQuestion(
+      prompt: 'What is the minimum number of players in a lineout?',
+      options: ['3', '2', '5', '7'],
       correctIndex: 1,
       points: 5,
     ),
@@ -85,28 +73,29 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
   }
 
   Future<void> _loadChallengeState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final todayKey = _todayKey();
-
-    if (prefs.getBool('challenge_done_$todayKey') == true) {
-      setState(() {
-        _isFinished = true;
-        _totalPoints = prefs.getInt('challenge_score_$todayKey') ?? 0;
-      });
+    final user = _auth.currentUser;
+    if (user != null) {
+      final doc = await _firestoreService.getPlayerProfile(user.uid);
+      final data = doc.data();
+      final lastCompleted = data?['lastChallengeDate'] as Timestamp?;
+      if (lastCompleted != null) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        if (lastCompleted.toDate().isAfter(today)) {
+          setState(() => _isFinished = true);
+        }
+      }
     }
   }
 
   Future<void> _saveChallengeState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final todayKey = _todayKey();
-
-    await prefs.setBool('challenge_done_$todayKey', true);
-    await prefs.setInt('challenge_score_$todayKey', _totalPoints);
-  }
-
-  String _todayKey() {
-    final now = DateTime.now();
-    return '${now.year}${now.month}${now.day}';
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestoreService.saveScore(user.uid, _totalPoints);
+      await _firestoreService.updatePlayerProfile(user.uid, {
+        'lastChallengeDate': Timestamp.now(),
+      });
+    }
   }
 
   void _handleSubmit() {
@@ -126,9 +115,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
         _isSubmitted = false;
       });
     } else {
-      setState(() {
-        _isFinished = true;
-      });
+      setState(() => _isFinished = true);
       await _saveChallengeState();
     }
   }
@@ -148,122 +135,51 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     return SafeArea(
       bottom: true,
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.all(24),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Question ${_currentIndex + 1} of ${_questions.length}',
-                  style: GoogleFonts.inter(color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 12),
-                if (q.videoUrl != null) ...[
-                  Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.black12,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.play_circle_outline,
-                        size: 64,
-                        color: Colors.black38,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Text(
-                  q.prompt,
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Question Points: ${q.points}', style: GoogleFonts.inter(fontSize: 14)),
-                    Text('Total Points: $_totalPoints', style: GoogleFonts.inter(fontSize: 14)),
-                  ],
-                ),
-              ],
-            ),
+          Text(
+            q.prompt,
+            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600),
           ),
-          ...List.generate(q.options.length, (i) {
-            final isSelected = q.selectedIndex == i;
-            Color bg;
-            if (_isSubmitted) {
-              if (i == q.correctIndex) {
-                bg = Colors.green.shade200;
-              } else if (isSelected) {
-                bg = Colors.red.shade200;
-              } else {
-                bg = Colors.grey.shade200;
-              }
-            } else {
-              bg = isSelected ? colorScheme.primary.withOpacity(0.3) : Colors.grey.shade200;
-            }
+          const SizedBox(height: 24),
+          ...List.generate(q.options.length, (index) {
+            final isSelected = index == q.selectedIndex;
+            final isCorrect = _isSubmitted && index == q.correctIndex;
+            final isWrong = _isSubmitted && isSelected && index != q.correctIndex;
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: GestureDetector(
-                onTap: _isSubmitted ? null : () => setState(() => q.selectedIndex = i),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(q.options[i], style: GoogleFonts.inter(fontSize: 16)),
-                ),
+            Color? color;
+            if (isCorrect) color = Colors.green;
+            if (isWrong) color = Colors.red;
+            if (isSelected && !_isSubmitted) color = colorScheme.primary;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                tileColor: color?.withOpacity(0.2) ?? Colors.grey.shade200,
+                title: Text(q.options[index], style: GoogleFonts.inter()),
+                onTap: _isSubmitted
+                    ? null
+                    : () {
+                  setState(() {
+                    q.selectedIndex = index;
+                  });
+                },
               ),
             );
           }),
-          const SizedBox(height: 24),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      disabledForegroundColor: Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                    ),
-                    onPressed: (q.selectedIndex == -1 || _isSubmitted) ? null : _handleSubmit,
-                    child: Text('Submit', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      disabledForegroundColor: Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-                    ),
-                    onPressed: _isSubmitted ? _handleNextOrFinish : null,
-                    child: Text(
-                      _isSubmitted ? (isLast ? 'Finish' : 'Next') : 'Next',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: q.selectedIndex == -1
+                ? null
+                : (_isSubmitted ? _handleNextOrFinish : _handleSubmit),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              minimumSize: const Size(double.infinity, 48),
+              textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
             ),
+            child: Text(_isSubmitted ? (isLast ? 'Finish' : 'Next') : 'Submit'),
           ),
         ],
       ),
@@ -283,8 +199,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
             const SizedBox(height: 16),
             Text('You scored $_totalPoints out of $_maxPoints.', style: GoogleFonts.inter(fontSize: 18), textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            Text('Rank today: #1', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600)),
-            const SizedBox(height: 32),
             Text('Check out today’s leaderboard via the Leaderboard tab.', textAlign: TextAlign.center),
           ],
         ),

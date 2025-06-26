@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 
-class EmailSignUpScreen extends StatefulWidget {
-  const EmailSignUpScreen({super.key});
+class EmailLoginScreen extends StatefulWidget {
+  const EmailLoginScreen({super.key});
 
   @override
-  State<EmailSignUpScreen> createState() => _EmailSignUpScreenState();
+  State<EmailLoginScreen> createState() => _EmailLoginScreenState();
 }
 
-class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
+class _EmailLoginScreenState extends State<EmailLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final AuthService _authService = AuthService();
 
@@ -18,7 +18,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
   bool _loading = false;
   String? _error;
 
-  Future<void> _signUp() async {
+  Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
@@ -27,22 +27,18 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
       _error = null;
     });
 
-    final profile = {
-      'email': _email,
-      'createdAt': DateTime.now(),
-    };
-
     try {
-      final user = await _authService.signUpWithEmail(_email, _password, profile);
+      final user = await _authService.signInWithEmail(_email, _password);
       if (user != null) {
-        // After sign-up, a verification email has been sent
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verification email sent. Please check your inbox.'),
-          ),
-        );
-        // Navigate to login screen
-        Navigator.pushReplacementNamed(context, '/login');
+        if (!user.emailVerified) {
+          await user.sendEmailVerification();
+          setState(() {
+            _error = 'Email not verified. A new verification link has been sent.';
+            _loading = false;
+          });
+          return;
+        }
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       setState(() {
@@ -61,7 +57,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
         borderSide: BorderSide(color: Colors.black),
       ),
       focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.black, width: 2.0),
+        borderSide: BorderSide(color: Colors.black, width: 2),
       ),
       filled: true,
       fillColor: Colors.white,
@@ -73,7 +69,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
+      appBar: AppBar(title: const Text('Login')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -83,7 +79,10 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                 ),
 
               // Email field
@@ -91,7 +90,8 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                 style: const TextStyle(color: Colors.black),
                 decoration: themedInput('Email'),
                 keyboardType: TextInputType.emailAddress,
-                validator: (val) => val != null && val.contains('@') ? null : 'Enter a valid email',
+                validator: (val) =>
+                (val != null && val.contains('@')) ? null : 'Enter a valid email',
                 onSaved: (val) => _email = val!,
               ),
               const SizedBox(height: 16),
@@ -101,12 +101,26 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                 style: const TextStyle(color: Colors.black),
                 decoration: themedInput('Password'),
                 obscureText: true,
-                validator: (val) => val != null && val.length >= 6 ? null : 'Min 6 characters',
+                validator: (val) =>
+                (val != null && val.length >= 6) ? null : 'Min 6 characters',
                 onSaved: (val) => _password = val!,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 8),
 
-              // Create Account button
+              // Forgot Password link
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/reset-password'),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Login button
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
@@ -114,23 +128,10 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                   foregroundColor: cs.onPrimary,
                   textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
                 ),
-                onPressed: _loading ? null : _signUp,
+                onPressed: _loading ? null : _signIn,
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Create Account'),
-              ),
-              const SizedBox(height: 16),
-
-              // Link to Login
-              Align(
-                alignment: Alignment.center,
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                  child: const Text(
-                    'Already have an account? Log in',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
+                    : const Text('Login'),
               ),
             ],
           ),
