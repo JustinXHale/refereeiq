@@ -8,7 +8,7 @@ description: "RefereeIQ is your pocket‐sized rugby referee coach.
   of the game’s laws with interactive quizzes and video 
   analysis."
 publish_to: 'none'
-version: 0.9.0+2
+version: 0.9.0+3
 
 environment:
   sdk: ^3.8.1
@@ -46,3 +46,4 @@ flutter:
     - assets/images/sofia.png
     - assets/icons/google_icon.png
     - assets/icons/app_icon.png
+    - .env

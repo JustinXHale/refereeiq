@@ -1,17 +1,11 @@
+// Fixed version of challenge_screen.dart
 import 'package:flutter/material.dart';
-<<<<<<< Updated upstream
 import 'package:google_fonts/google_fonts.dart';
-import 'daily_challenge_tab.dart';
-import 'leaderboard_tab.dart';
-
-class ChallengeScreen extends StatelessWidget {
-=======
 import 'package:RefereeIQ/screens/daily_challenge_tab.dart';
 import 'package:RefereeIQ/screens/leaderboard_tab.dart';
 import 'package:RefereeIQ/screens/history_tab.dart';
 
 class ChallengeScreen extends StatefulWidget {
->>>>>>> Stashed changes
   const ChallengeScreen({super.key});
 
   @override

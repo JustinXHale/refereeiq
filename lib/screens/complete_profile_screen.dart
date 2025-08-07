@@ -22,7 +22,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   String? _affiliation;
   String _refereeAssociation = '';
   String _homeTeam = '';
-  File? _image;
+  File? _imageFile;
 
   static const _usStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -44,9 +44,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
     setState(() {
       _name = user.displayName ?? '';
-      if (user.photoURL != null && user.photoURL!.isNotEmpty) {
-        _image = File(''); // Placeholder to indicate a photo exists
-      }
     });
 
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
@@ -65,7 +62,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => _image = File(picked.path));
+    if (picked != null) {
+      setState(() {
+        _imageFile = File(picked.path);
+      });
+    }
   }
 
   Future<void> _submit() async {
@@ -80,7 +81,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       'city': _city,
       'state': _state,
       'affiliation': _affiliation,
-      'photoURL': _image?.path ?? _auth.currentUser?.photoURL ?? '',
+      'photoURL': _auth.currentUser?.photoURL ?? '',
     };
     if (_affiliation == 'Referee') data['refereeAssociation'] = _refereeAssociation;
     if (_affiliation == 'Player' || _affiliation == 'Coach') data['homeTeam'] = _homeTeam;
@@ -121,6 +122,25 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             const Text('Complete Your Profile'),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await FirebaseAuth.instance.signOut();
+                if (!mounted) return;
+                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return const [
+                PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Text('Cancel & Logout'),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -128,22 +148,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Profile image preview
-              if (_image != null && _image!.path.isNotEmpty) ...[
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: FileImage(_image!),
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 48,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!)
+                        : (_auth.currentUser?.photoURL != null
+                        ? NetworkImage(_auth.currentUser!.photoURL!) as ImageProvider
+                        : null),
+                    child: _imageFile == null && _auth.currentUser?.photoURL == null
+                        ? const Icon(Icons.person, size: 48, color: Colors.black)
+                        : null,
+                  ),
                 ),
-                const SizedBox(height: 16),
-              ] else if (_auth.currentUser?.photoURL != null) ...[
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage(_auth.currentUser!.photoURL!),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Name
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 decoration: _themedInput('Name'),
                 initialValue: _name,
@@ -151,25 +173,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-
-              // Email (disabled)
               TextFormField(
                 decoration: _themedInput('Email'),
                 initialValue: userEmail,
                 enabled: false,
               ),
               const SizedBox(height: 16),
-
-              // Favorite Team
               TextFormField(
-                decoration: _themedInput('Favorite Team'),
+                decoration: _themedInput('Favorite Rugby Team'),
                 initialValue: _favoriteTeam,
                 onSaved: (v) => _favoriteTeam = v!.trim(),
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-
-              // City & State row
               Row(
                 children: [
                   Expanded(
@@ -195,8 +211,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Affiliation
               DropdownButtonFormField<String>(
                 decoration: _themedInput('Affiliation'),
                 hint: const Text('Choose Affiliation'),
@@ -209,8 +223,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 onSaved: (v) => _affiliation = v,
               ),
               const SizedBox(height: 16),
-
-              // Conditional fields
               if (_affiliation == 'Referee') ...[
                 TextFormField(
                   decoration: _themedInput('Referee Association'),
@@ -229,20 +241,6 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-
-              // Photo upload
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFADC44),
-                  foregroundColor: Colors.black,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                onPressed: _pickImage,
-                child: const Text('Upload Photo'),
-              ),
-              const SizedBox(height: 24),
-
-              // Save button
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFADC44),
