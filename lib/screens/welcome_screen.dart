@@ -2,6 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+<<<<<<< Updated upstream
+=======
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:RefereeIQ/services/auth_service.dart'; // <-- Make sure this path is correct
+>>>>>>> Stashed changes
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
@@ -50,6 +55,7 @@ class WelcomeScreen extends StatelessWidget {
 
                 const Spacer(),
 
+<<<<<<< Updated upstream
                 // Google Sign-In Button
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -87,6 +93,36 @@ class WelcomeScreen extends StatelessWidget {
                           const Text('Continue with Google'),
                         ],
                       ),
+=======
+                // Google Sign-In
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF212121),
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () async {
+                      final user = await AuthService().signInWithGoogle();
+                      if (user != null) {
+                        Navigator.pushReplacementNamed(context, '/completeProfile');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Google Sign-In failed or was canceled.')),
+                        );
+                      }
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset('assets/icons/google_icon.png', height: 24, width: 24),
+                        const SizedBox(width: 12),
+                        const Text('Continue with Google'),
+                      ],
+>>>>>>> Stashed changes
                     ),
                   ),
                 ),
