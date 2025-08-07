@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key}); // <-- Added const constructor
+  const SettingsScreen({super.key});
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -13,6 +13,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -35,7 +37,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            const Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Notifications',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             SwitchListTile(
               title: const Text('Push Notifications'),
               value: _notifications,
@@ -46,16 +54,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             const SizedBox(height: 16),
-            const Text('Legal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Legal',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             ListTile(
               title: const Text('Privacy Policy'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {},
+              onTap: () {
+                // Add actual navigation or link opening here
+              },
             ),
             ListTile(
               title: const Text('Terms of Service'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {},
+              onTap: () {
+                // Add actual navigation or link opening here
+              },
             ),
           ],
         ),
