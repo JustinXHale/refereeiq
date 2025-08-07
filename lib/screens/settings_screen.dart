@@ -9,7 +9,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = false;
   bool _notifications = true;
 
   @override
@@ -36,17 +35,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            const Text('Appearance', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            SwitchListTile(
-              title: const Text('Dark Mode'),
-              value: _darkMode,
-              onChanged: (value) {
-                setState(() {
-                  _darkMode = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
             const Text('Notifications', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SwitchListTile(
               title: const Text('Push Notifications'),

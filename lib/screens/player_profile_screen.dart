@@ -1,5 +1,8 @@
+<<<<<<< Updated upstream
 // player_profile_screen.dart (cleaned up)
 
+=======
+>>>>>>> Stashed changes
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -39,7 +42,11 @@ class PlayerProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
+<<<<<<< Updated upstream
                 player['name'],
+=======
+                player['name'] ?? 'Unknown',
+>>>>>>> Stashed changes
                 style: GoogleFonts.inter(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -47,6 +54,7 @@ class PlayerProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
+<<<<<<< Updated upstream
                 'Affiliation: ${player['affiliation']}',
                 style: GoogleFonts.inter(
                   fontSize: 16,
@@ -60,6 +68,25 @@ class PlayerProfileScreen extends StatelessWidget {
                   fontSize: 16,
                   color: Colors.grey.shade700,
                 ),
+=======
+                'Location: ${player['state'] ?? 'N/A'}',
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Affiliation: ${player['type'] ?? 'N/A'}',
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Favorite Team: ${player['favoriteTeam'] ?? 'N/A'}',
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Lifetime Points: ${player['lifetime'] ?? 0}',
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700),
+>>>>>>> Stashed changes
               ),
             ],
           ),
