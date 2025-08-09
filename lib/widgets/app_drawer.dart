@@ -41,9 +41,13 @@ class AppDrawer extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundImage: (photoURL != null && photoURL.isNotEmpty)
+                      backgroundColor: Colors.grey.shade400,
+                      backgroundImage: (photoURL != null && photoURL.trim().isNotEmpty)
                           ? NetworkImage(photoURL)
-                          : const AssetImage('assets/icons/app_icon.png') as ImageProvider,
+                          : null,
+                      child: (photoURL == null || photoURL.trim().isEmpty)
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
                     ),
                     const SizedBox(width: 24),
                     Column(
@@ -84,6 +88,7 @@ class AppDrawer extends StatelessWidget {
                 title: const Text('Logout'),
                 onTap: () async {
                   await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
                   Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
                 },
               ),

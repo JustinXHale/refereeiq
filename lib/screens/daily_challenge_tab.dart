@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:RefereeIQ/services/firestore_service.dart';
 
 class ChallengeQuestion {
   final String prompt;
@@ -86,22 +89,26 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
 
   Future<void> _loadChallengeState() async {
     final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
     final todayKey = _todayKey();
 
-    if (prefs.getBool('challenge_done_$todayKey') == true) {
+    if (user != null && prefs.getBool('challenge_done_${user.uid}_$todayKey') == true) {
       setState(() {
         _isFinished = true;
-        _totalPoints = prefs.getInt('challenge_score_$todayKey') ?? 0;
+        _totalPoints = prefs.getInt('challenge_score_${user.uid}_$todayKey') ?? 0;
       });
     }
   }
 
   Future<void> _saveChallengeState() async {
     final prefs = await SharedPreferences.getInstance();
+    final user = FirebaseAuth.instance.currentUser;
     final todayKey = _todayKey();
 
-    await prefs.setBool('challenge_done_$todayKey', true);
-    await prefs.setInt('challenge_score_$todayKey', _totalPoints);
+    if (user != null) {
+      await prefs.setBool('challenge_done_${user.uid}_$todayKey', true);
+      await prefs.setInt('challenge_score_${user.uid}_$todayKey', _totalPoints);
+    }
   }
 
   String _todayKey() {
@@ -129,7 +136,44 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
       setState(() {
         _isFinished = true;
       });
+
       await _saveChallengeState();
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        final todayKey = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
+        final attemptsRef = FirebaseFirestore.instance
+            .collection('challenge_attempts')
+            .doc('${user.uid}_$todayKey');
+
+        final attemptSnapshot = await attemptsRef.get();
+
+        if (!attemptSnapshot.exists) {
+          final profileSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+          final profileData = profileSnapshot.data();
+
+          if (profileData != null) {
+            await FirestoreService().submitScore(
+              uid: user.uid,
+              name: profileData['name'] ?? 'Guest',
+              state: profileData['state'] ?? 'Unknown',
+              type: profileData['affiliation'] ?? 'Unknown',
+              score: _totalPoints,
+            );
+
+            await attemptsRef.set({
+              'uid': user.uid,
+              'date': Timestamp.now(),
+              'score': _totalPoints,
+            });
+          }
+        } else {
+          debugPrint("User has already submitted a challenge today.");
+        }
+      }
     }
   }
 
@@ -207,7 +251,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                 bg = Colors.grey.shade200;
               }
             } else {
-              bg = isSelected ? colorScheme.primary.withOpacity(0.3) : Colors.grey.shade200;
+              bg = isSelected ? colorScheme.primary.withAlpha((0.3 * 255).toInt()) : Colors.grey.shade200;
             }
 
             return Padding(

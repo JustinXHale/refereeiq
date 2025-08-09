@@ -17,6 +17,14 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _loading = false;
+  bool _obscurePassword = true; // NEW: controls show/hide
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -42,22 +50,26 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
           (data['name'] as String).trim().isNotEmpty;
 
       if (hasCompletedProfile) {
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/home');
       } else {
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/complete-profile');
       }
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? 'Login failed')),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your email first')),
       );
@@ -66,10 +78,12 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
     try {
       await _auth.sendPasswordResetEmail(email: email);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Password reset email sent')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to send reset email')),
       );
@@ -91,16 +105,30 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 validator: (val) => val == null || val.isEmpty ? 'Enter email' : null,
               ),
               const SizedBox(height: 16),
 
-              // Password
+              // Password (with show/hide)
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  suffixIcon: IconButton(
+                    tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() => _obscurePassword = !_obscurePassword);
+                    },
+                  ),
+                ),
+                obscureText: _obscurePassword,
+                textInputAction: TextInputAction.done,
                 validator: (val) => val == null || val.length < 6 ? 'Min 6 characters' : null,
+                onFieldSubmitted: (_) => _loading ? null : _login(),
               ),
               const SizedBox(height: 16),
 
@@ -136,7 +164,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/signup'),
                 child: const Text(
-                  'Don\'t have an account? Create one',
+                  "Don't have an account? Create one",
                   style: TextStyle(color: Colors.black),
                 ),
               ),

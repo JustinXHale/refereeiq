@@ -38,9 +38,21 @@ class FirestoreService {
     );
   }
 
-  Future<void> saveScore(String uid, int score) async {
-    await _db.collection('leaderboard').doc(uid).set({
-      'score': score,
+  Future<void> submitScore({
+    required String uid,
+    required String name,
+    required String state,
+    required String type,
+    required int score,
+  }) async {
+    final ref = _db.collection('leaderboard').doc(uid);
+    await ref.set({
+      'name': name,
+      'state': state,
+      'type': type,
+      'daily': score,
+      'monthly': FieldValue.increment(score),
+      'lifetime': FieldValue.increment(score),
       'timestamp': Timestamp.now(),
     }, SetOptions(merge: true));
   }

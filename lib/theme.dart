@@ -15,6 +15,8 @@ class RefereeIQTheme {
     onBackground: const Color(0xFF212121),
     error: Colors.red,
     onError: Colors.white,
+    tertiary: const Color(0xFF0C2E55),
+    onTertiary: Colors.white,
   );
 
   static ThemeData get lightTheme => ThemeData(

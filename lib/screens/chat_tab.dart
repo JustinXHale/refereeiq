@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/openai_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatTab extends StatefulWidget {
   final Function(List<Map<String, dynamic>>) onSaveConversation;
@@ -25,6 +26,21 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
   bool _isThinking = false;
 
+  String _toVIEW(String input) {
+    final re = RegExp(r'\[Link\]\((https?:\/\/[^)]+)\)', caseSensitive: false);
+    return input.replaceAllMapped(re, (m) => '[VIEW](${m.group(1)})');
+  }
+
+  Future<void> _openLink(String url) async {
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open $url')),
+      );
+    }
+  }
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
@@ -38,7 +54,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   }
 
   void _sendMessage() async {
-    final text = (_controller.text ?? '').trim();
+    final text = (_controller.text).trim();
 
     debugPrint('Sending message: $text');
 
@@ -65,7 +81,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     _controller.clear();
 
     try {
-      // 🔸 Send full message history now:
+      // Send full message history to your Cloud Function
       final responseText = await OpenAIService.sendMessage(updatedMessages);
 
       final updatedMessagesAfterResponse =
@@ -91,9 +107,36 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
 
   Widget _buildMessage(Map<String, dynamic> message) {
     final bool isUser = message['sender'] == 'user';
+    final String text = (message['text'] ?? '').toString();
+    final DateTime ts = (message['timestamp'] is DateTime)
+        ? message['timestamp'] as DateTime
+        : DateTime.now();
+
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
     final bubbleColor = isUser ? const Color(0xFFFADC44) : Colors.grey.shade200;
     const textColor = Colors.black;
+
+    final Widget bubbleChild = isUser
+        ? Text(
+      text,
+      style: GoogleFonts.inter(fontSize: 16, color: textColor),
+    )
+        : MarkdownBody(
+      data: _toVIEW(text),
+      onTapLink: (label, href, title) {
+        if (href != null) _openLink(href);
+      },
+      styleSheet:
+      MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+        p: GoogleFonts.inter(fontSize: 16, color: Colors.black),
+        a: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          color: Theme.of(context).colorScheme.tertiary,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
 
     return Align(
       alignment: alignment,
@@ -108,13 +151,10 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
           crossAxisAlignment:
           isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            SelectableText(
-              message['text'],
-              style: GoogleFonts.inter(fontSize: 16, color: textColor),
-            ),
+            bubbleChild,
             const SizedBox(height: 4),
             Text(
-              DateFormat('h:mm a').format(message['timestamp']),
+              DateFormat('h:mm a').format(ts),
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: Colors.grey.shade600,
