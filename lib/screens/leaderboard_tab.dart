@@ -1,8 +1,6 @@
 // leaderboard_tab.dart (fixed overflow + tightened columns)
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import 'package:RefereeIQ/screens/player_profile_screen.dart';
 
@@ -83,17 +81,17 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snapshot.hasError) {
-                return Center(child: Text('Error: \${snapshot.error}'));
+                return Center(child: Text('Error: ${snapshot.error}'));
               }
 
-              final players = snapshot.data ?? [];
+              final players = (snapshot.data ?? []).take(100).toList();
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    headingRowColor: MaterialStateColor.resolveWith(
+                    headingRowColor: WidgetStateColor.resolveWith(
                           (states) => colorScheme.primary,
                     ),
                     columnSpacing: 16,

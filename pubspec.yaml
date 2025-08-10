@@ -1,14 +1,16 @@
 name: RefereeIQ
-description: "RefereeIQ is your pocket‐sized rugby referee coach. 
-  Test your knowledge daily with bite-sized challenges,
-  review complex laws and scenarios, track your score 
-  and ranking, and compare with fellow referees on the
-  integrated leaderboard. Perfect for referees, coaches,
-  players, and fans who want to deepen their understanding
-  of the game’s laws with interactive quizzes and video 
-  analysis."
+description: "RefereeIQ – Rugby’s Laws, Explained Like Never Before
+  Meet Sofia, your AI rugby laws coach. She’s trained to understand the flow, nuance, and context of Rugby Union — so you can have real, back-and-forth conversations about the game’s most complex situations.
+
+  Whether you’re a referee, player, coach, or fan, Sofia helps you:
+  - Break down tricky laws and grey areas in plain language.
+  - Explore “what if” scenarios and get context-driven answers.
+  - See the game from a referee’s perspective to understand decisions on the field.
+
+  Rugby is a game where the referee shapes the outcome more than in most sports. RefereeIQ gives you direct access to that perspective — anytime, anywhere."
+
 publish_to: 'none'
-version: 0.9.0+4
+version: 0.9.1+0
 
 environment:
   sdk: ^3.8.1

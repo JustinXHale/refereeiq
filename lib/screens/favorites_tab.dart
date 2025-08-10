@@ -1,5 +1,3 @@
-// favorites_tab.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -19,13 +17,35 @@ class FavoritesTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (favorites.isEmpty) {
       return Center(
-        child: Text(
-          'No favorites yet.',
-          style: GoogleFonts.inter(
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start, // Align to top
+            children: [
+              const SizedBox(height: 80), // Push down from top
+              Icon(
+                Icons.star_border,
+                size: 64,
+                color: const Color(0xFFFADC44), // App yellow
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No favorites yet',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap the star icon next to a chat message to save it here for quick access.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -40,7 +60,8 @@ class FavoritesTab extends StatelessWidget {
             ? conversation.first['text'] as String
             : 'Conversation ${index + 1}';
         final timestamp = conversation.isNotEmpty
-            ? DateFormat('MMM d, h:mm a').format(conversation.first['timestamp'])
+            ? DateFormat('MMM d, h:mm a')
+            .format(conversation.first['timestamp'])
             : '';
 
         return ListTile(
@@ -67,7 +88,8 @@ class FavoritesTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => ConversationDetailScreen(conversation: conversation),
+                builder: (_) =>
+                    ConversationDetailScreen(conversation: conversation),
               ),
             );
           },

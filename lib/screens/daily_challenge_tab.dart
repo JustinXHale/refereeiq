@@ -4,12 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:RefereeIQ/services/firestore_service.dart';
+import 'package:RefereeIQ/screens/congratulations_screen.dart';
+
 
 class ChallengeQuestion {
   final String prompt;
   final List<String> options;
   final int correctIndex;
-  final int points;
+  final int points; // 3 (easy), 5 (medium), 7 (hard)
   final String? videoUrl;
   int selectedIndex = -1;
 
@@ -20,6 +22,16 @@ class ChallengeQuestion {
     required this.points,
     this.videoUrl,
   });
+
+  factory ChallengeQuestion.fromMap(Map<String, dynamic> m) {
+    return ChallengeQuestion(
+      prompt: (m['prompt'] ?? '').toString(),
+      options: ((m['options'] ?? []) as List).map((e) => e.toString()).toList(),
+      correctIndex: (m['correctIndex'] ?? 0) as int,
+      points: (m['points'] ?? 1) as int,
+      videoUrl: (m['videoUrl'] ?? m['videoURL']) as String?,
+    );
+  }
 }
 
 class DailyChallengeTab extends StatefulWidget {
@@ -31,71 +43,83 @@ class DailyChallengeTab extends StatefulWidget {
 
 class _DailyChallengeTabState extends State<DailyChallengeTab>
     with AutomaticKeepAliveClientMixin {
-  final List<ChallengeQuestion> _questions = [
-    ChallengeQuestion(
-      prompt: 'What is the maximum points for a penalty goal?',
-      options: ['1', '2', '3', '4'],
-      correctIndex: 2,
-      points: 3,
-    ),
-    ChallengeQuestion(
-      prompt: 'Watch this scrum technique and identify the incorrect bind.',
-      options: [
-        'A: Shoulder bind',
-        'B: Arm bind',
-        'C: Wrist bind',
-        'D: Hand bind'
-      ],
-      correctIndex: 1,
-      points: 5,
-      videoUrl: 'https://example.com/scrum.mp4',
-    ),
-    ChallengeQuestion(
-      prompt: 'Which law allows a quick throw-in?',
-      options: ['Law 15', 'Law 16', 'Law 17', 'Law 18'],
-      correctIndex: 2,
-      points: 3,
-    ),
-    ChallengeQuestion(
-      prompt: 'In a ruck, can a player use their feet to win the ball?',
-      options: [
-        'Yes',
-        'Only behind the ball',
-        'No',
-        'Only in bound area'
-      ],
-      correctIndex: 2,
-      points: 5,
-    ),
-    ChallengeQuestion(
-      prompt: 'Which score gives 5 points?',
-      options: ['Drop goal', 'Try', 'Penalty', 'Conversion'],
-      correctIndex: 1,
-      points: 5,
-    ),
-  ];
+  // Loaded from Firestore (instead of hardcoded)
+  List<ChallengeQuestion> _questions = [];
 
+  // UI/state
   int _currentIndex = 0;
   bool _isSubmitted = false;
   bool _isFinished = false;
   int _totalPoints = 0;
+
+  // Loading state
+  bool _loading = true;
+  String? _loadError;
+
   int get _maxPoints => _questions.fold(0, (sum, q) => sum + q.points);
 
   @override
   void initState() {
     super.initState();
-    _loadChallengeState();
+    _fetchToday();
   }
 
+  Future<void> _fetchToday() async {
+    try {
+      final id = _todayDocId(); // YYYY-MM-DD-am/pm
+      final snap = await FirebaseFirestore.instance
+          .collection('daily_challenges')
+          .doc(id)
+          .get();
+
+      if (!snap.exists) {
+        setState(() {
+          _loading = false;
+          _loadError = 'empty'; // sentinel so we show our custom UI
+        });
+        return;
+      }
+
+      final data = snap.data()!;
+      final arr = (data['questions'] as List<dynamic>);
+      final qs = arr
+          .map((e) => ChallengeQuestion.fromMap(
+        Map<String, dynamic>.from(e as Map),
+      ))
+          .toList();
+
+      setState(() {
+        // reset transient state on new load
+        _questions = qs;
+        _loading = false;
+        _currentIndex = 0;
+        _isSubmitted = false;
+        _isFinished = false;
+        _totalPoints = 0;
+      });
+
+      // Restore local completion state (if user already finished this block)
+      await _loadChallengeState();
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _loadError = 'Failed to load: $e';
+      });
+    }
+  }
+
+  // === Local completion state (per user, per block) ===
   Future<void> _loadChallengeState() async {
     final prefs = await SharedPreferences.getInstance();
     final user = FirebaseAuth.instance.currentUser;
-    final todayKey = _todayKey();
+    final todayKey = _todayKey(); // includes -am / -pm
 
-    if (user != null && prefs.getBool('challenge_done_${user.uid}_$todayKey') == true) {
+    if (user != null &&
+        prefs.getBool('challenge_done_${user.uid}_$todayKey') == true) {
       setState(() {
         _isFinished = true;
-        _totalPoints = prefs.getInt('challenge_score_${user.uid}_$todayKey') ?? 0;
+        _totalPoints =
+            prefs.getInt('challenge_score_${user.uid}_$todayKey') ?? 0;
       });
     }
   }
@@ -103,7 +127,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
   Future<void> _saveChallengeState() async {
     final prefs = await SharedPreferences.getInstance();
     final user = FirebaseAuth.instance.currentUser;
-    final todayKey = _todayKey();
+    final todayKey = _todayKey(); // includes -am / -pm
 
     if (user != null) {
       await prefs.setBool('challenge_done_${user.uid}_$todayKey', true);
@@ -111,11 +135,19 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     }
   }
 
-  String _todayKey() {
+  // Keep local prefs in lockstep with Firestore doc id
+  String _todayKey() => _todayDocId();
+
+  String _todayDocId() {
     final now = DateTime.now();
-    return '${now.year}${now.month}${now.day}';
+    final y = now.year.toString().padLeft(4, '0');
+    final m = now.month.toString().padLeft(2, '0');
+    final d = now.day.toString().padLeft(2, '0');
+    final block = now.hour < 12 ? 'am' : 'pm';
+    return '$y-$m-$d-$block'; // e.g., 2025-08-09-am
   }
 
+  // === Quiz flow ===
   void _handleSubmit() {
     setState(() {
       _isSubmitted = true;
@@ -126,68 +158,185 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     });
   }
 
-  void _handleNextOrFinish() async {
+  Future<void> _handleNextOrFinish() async {
     if (_currentIndex < _questions.length - 1) {
       setState(() {
         _currentIndex++;
         _isSubmitted = false;
       });
-    } else {
-      setState(() {
-        _isFinished = true;
-      });
-
-      await _saveChallengeState();
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        final todayKey = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
-        final attemptsRef = FirebaseFirestore.instance
-            .collection('challenge_attempts')
-            .doc('${user.uid}_$todayKey');
-
-        final attemptSnapshot = await attemptsRef.get();
-
-        if (!attemptSnapshot.exists) {
-          final profileSnapshot = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-          final profileData = profileSnapshot.data();
-
-          if (profileData != null) {
-            await FirestoreService().submitScore(
-              uid: user.uid,
-              name: profileData['name'] ?? 'Guest',
-              state: profileData['state'] ?? 'Unknown',
-              type: profileData['affiliation'] ?? 'Unknown',
-              score: _totalPoints,
-            );
-
-            await attemptsRef.set({
-              'uid': user.uid,
-              'date': Timestamp.now(),
-              'score': _totalPoints,
-            });
-          }
-        } else {
-          debugPrint("User has already submitted a challenge today.");
-        }
-      }
+      return;
     }
+
+    // finished
+    await _saveChallengeState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final todayKey = _todayDocId(); // e.g., 2025-08-10-am
+    final attemptsRef = FirebaseFirestore.instance
+        .collection('challenge_attempts')
+        .doc('${user.uid}_$todayKey');
+
+    final attemptSnapshot = await attemptsRef.get();
+
+    if (!attemptSnapshot.exists) {
+      final profileSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final profileData = profileSnapshot.data();
+
+      if (profileData != null) {
+        await FirestoreService().submitScore(
+          uid: user.uid,
+          name: profileData['name'] ?? 'Guest',
+          state: profileData['state'] ?? 'Unknown',
+          type: profileData['affiliation'] ?? 'Unknown',
+          score: _totalPoints,
+        );
+
+        await attemptsRef.set({
+          'uid': user.uid,
+          'date': Timestamp.now(),
+          'score': _totalPoints,
+        });
+      }
+    } else {
+      debugPrint('User has already submitted a challenge for $todayKey.');
+    }
+
+    // 🎯 NEW: compute rank, then navigate to CongratulationsScreen
+    final rank = await FirestoreService().getRankForCurrentBlock(uid: user.uid);
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CongratulationsScreen(
+          score: _totalPoints,
+          maxScore: _maxPoints,
+          rank: rank,
+        ),
+      ),
+    );
   }
+
+  String _nextDropLabel() {
+    // Your schedule: 8:30 AM & 8:30 PM Central Time
+    // For simplicity, we format using the device locale/time and add "CT" to the label.
+    // (If you want true timezone conversion, we can add a tz package later.)
+    final now = DateTime.now();
+    final todayAm = DateTime(now.year, now.month, now.day, 8, 30);
+    final todayPm = DateTime(now.year, now.month, now.day, 20, 30);
+
+    DateTime next;
+    if (now.isBefore(todayAm)) {
+      next = todayAm;
+    } else if (now.isBefore(todayPm)) {
+      next = todayPm;
+    } else {
+      next = todayAm.add(const Duration(days: 1));
+    }
+
+    // Simple human label
+    final hour = (next.hour % 12 == 0) ? 12 : next.hour % 12;
+    final minute = next.minute.toString().padLeft(2, '0');
+    final ampm = next.hour < 12 ? 'AM' : 'PM';
+
+    // Sat, Aug 10 • 8:30 AM CT
+    final weekdayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    final monthNames = [
+      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+    final weekday = weekdayNames[(next.weekday + 6) % 7];
+    final month = monthNames[next.month - 1];
+
+    return '$weekday, $month ${next.day} • $hour:$minute $ampm CT';
+  }
+
+  Widget _buildChallengeEmptyState(ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Your app icon (fallback to an icon if asset missing)
+            // If you prefer not to use an asset, replace with Icon(Icons.flag_outlined, size: 64, color: Colors.grey.shade400)
+            Image.asset(
+              'assets/icons/app_icon.png',
+              width: 80,
+              height: 80,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.flag_outlined,
+                size: 64,
+                color: Colors.grey.shade400,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Daily Challenge",
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "New questions drop at 8:30 AM and 8:30 PM (CT).\n"
+                  "Next drop: ${_nextDropLabel()}",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              onPressed: () async {
+                setState(() => _loading = true);
+                await _fetchToday(); // re-check Firestore
+              },
+              child: Text(
+                'Refresh',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    if (_isFinished) {
-      return _buildCongratulations(colorScheme);
+    // Loading / error / empty guards
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_loadError == 'empty') {
+      return _buildChallengeEmptyState(Theme.of(context).colorScheme);
+    }
+    if (_loadError != null) {
+      // Any other error
+      return Center(child: Text(_loadError!));
+    }
+    if (_questions.isEmpty) {
+      return const Center(child: Text('No questions available for this block.'));
     }
 
     final q = _questions[_currentIndex];
-    final isLast = _currentIndex == _questions.length - 1;
 
     return SafeArea(
       bottom: true,
@@ -232,8 +381,10 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Question Points: ${q.points}', style: GoogleFonts.inter(fontSize: 14)),
-                    Text('Total Points: $_totalPoints', style: GoogleFonts.inter(fontSize: 14)),
+                    Text('Question Points: ${q.points}',
+                        style: GoogleFonts.inter(fontSize: 14)),
+                    Text('Total Points: $_totalPoints',
+                        style: GoogleFonts.inter(fontSize: 14)),
                   ],
                 ),
               ],
@@ -251,20 +402,26 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                 bg = Colors.grey.shade200;
               }
             } else {
-              bg = isSelected ? colorScheme.primary.withAlpha((0.3 * 255).toInt()) : Colors.grey.shade200;
+              bg = isSelected
+                  ? colorScheme.primary.withAlpha((0.3 * 255).toInt())
+                  : Colors.grey.shade200;
             }
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: GestureDetector(
-                onTap: _isSubmitted ? null : () => setState(() => q.selectedIndex = i),
+                onTap: _isSubmitted
+                    ? null
+                    : () => setState(() => q.selectedIndex = i),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
                     color: bg,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(q.options[i], style: GoogleFonts.inter(fontSize: 16)),
+                  child: Text(q.options[i],
+                      style: GoogleFonts.inter(fontSize: 16)),
                 ),
               ),
             );
@@ -282,10 +439,15 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                       disabledBackgroundColor: Colors.grey.shade300,
                       disabledForegroundColor: Colors.grey.shade600,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32)),
                     ),
-                    onPressed: (q.selectedIndex == -1 || _isSubmitted) ? null : _handleSubmit,
-                    child: Text('Submit', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                    onPressed: (q.selectedIndex == -1 || _isSubmitted)
+                        ? null
+                        : _handleSubmit,
+                    child: Text('Submit',
+                        style:
+                        GoogleFonts.inter(fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -297,11 +459,16 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                       disabledBackgroundColor: Colors.grey.shade300,
                       disabledForegroundColor: Colors.grey.shade600,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32)),
                     ),
                     onPressed: _isSubmitted ? _handleNextOrFinish : null,
                     child: Text(
-                      _isSubmitted ? (isLast ? 'Finish' : 'Next') : 'Next',
+                      _isSubmitted
+                          ? (_currentIndex == _questions.length - 1
+                          ? 'Finish'
+                          : 'Next')
+                          : 'Next',
                       style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -323,13 +490,16 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
           children: [
             Icon(Icons.emoji_events, size: 80, color: colorScheme.primary),
             const SizedBox(height: 24),
-            Text('Congratulations!', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Congratulations!',
+                style: GoogleFonts.inter(
+                    fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            Text('You scored $_totalPoints out of $_maxPoints.', style: GoogleFonts.inter(fontSize: 18), textAlign: TextAlign.center),
+            Text('You scored $_totalPoints out of $_maxPoints.',
+                style: GoogleFonts.inter(fontSize: 18),
+                textAlign: TextAlign.center),
             const SizedBox(height: 12),
-            Text('Rank today: #1', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade600)),
-            const SizedBox(height: 32),
-            Text('Check out today’s leaderboard via the Leaderboard tab.', textAlign: TextAlign.center),
+            Text('Check out today’s leaderboard via the Leaderboard tab.',
+                textAlign: TextAlign.center),
           ],
         ),
       ),

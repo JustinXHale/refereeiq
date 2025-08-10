@@ -24,7 +24,16 @@ class ChatTab extends StatefulWidget {
 class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _inputFocus = FocusNode();
   bool _isThinking = false;
+
+  final List<String> _examplePrompts = const [
+    'Explain offside when a player is in front of the kicker.',
+    'What happens if the ball hits the referee?',
+    'Walk me through Law 19 lineout basics.',
+    'Quick throw: when is it still legal?',
+    'How do you manage repeated scrum collapses?'
+  ];
 
   String _toVIEW(String input) {
     final re = RegExp(r'\[Link\]\((https?:\/\/[^)]+)\)', caseSensitive: false);
@@ -53,11 +62,16 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     });
   }
 
+  void _prefillAndFocus(String text) {
+    _controller.text = text;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: _controller.text.length),
+    );
+    _inputFocus.requestFocus();
+  }
+
   void _sendMessage() async {
     final text = (_controller.text).trim();
-
-    debugPrint('Sending message: $text');
-
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a message!')),
@@ -81,7 +95,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     _controller.clear();
 
     try {
-      // Send full message history to your Cloud Function
       final responseText = await OpenAIService.sendMessage(updatedMessages);
 
       final updatedMessagesAfterResponse =
@@ -166,6 +179,40 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     );
   }
 
+  Widget _buildPromptChips(BuildContext context) {
+    final maxChipWidth = MediaQuery.of(context).size.width * 0.60;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: _examplePrompts.map((text) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6.0),
+            child: GestureDetector(
+              onTap: () => _prefillAndFocus(text),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxChipWidth),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFADC44),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFF0CF1E), width: 1),
+                  ),
+                  child: Text(
+                    text,
+                    softWrap: true,
+                    style: GoogleFonts.inter(fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   void _clearChat() {
     widget.onMessagesChanged([]);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -179,6 +226,14 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
   void _saveConversation() {
     if (widget.messages.isEmpty) return;
     widget.onSaveConversation(widget.messages);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    _inputFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -197,10 +252,10 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 64,
-                      color: Colors.grey.shade400,
+                    Image.asset(
+                      'assets/icons/app_icon.png',
+                      width: 80,
+                      height: 80,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -212,7 +267,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tap the send button to start.',
+                      'Tap a prompt below or type your own.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade500,
@@ -222,6 +277,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 ),
               ),
             ),
+            _buildPromptChips(context),
           ] else ...[
             Expanded(
               child: ListView.builder(
@@ -300,17 +356,22 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
               children: [
                 Expanded(
                   child: TextField(
+                    focusNode: _inputFocus,
+                    minLines: 2,
+                    maxLines: 5,
                     controller: _controller,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _sendMessage(),
                     decoration: InputDecoration(
-                      hintText: 'Ask Sofia a question...',
+                      hintText: 'Ask a question, describe a scenario',
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(32),
+                        borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide(color: Colors.grey.shade400),
                       ),
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                 ),

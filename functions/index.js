@@ -1,3 +1,4 @@
+// functions/index.js
 // Gen2 Firebase Functions (Node 20)
 
 // Handlers
@@ -12,6 +13,12 @@ const { pingV2 } = require('./handlers/health');
 // Scheduled tasks
 const { clarificationsNotify } = require('./tasks/clarificationsNotify');
 
+// Daily challenge tasks
+const {
+  createDailyChallenge,
+  createDailyChallengeNow
+} = require('./tasks/createDailyChallenge');
+
 // Export handlers
 exports.chatWithGPT = chatWithGPT;
 exports.scrapeClarifications = scrapeClarifications;
@@ -21,3 +28,7 @@ exports.pingV2 = pingV2;
 
 // Export scheduled tasks
 exports.clarificationsNotify = clarificationsNotify;
+
+// Export daily challenge tasks
+exports.createDailyChallenge = createDailyChallenge;         // scheduled
+exports.createDailyChallengeNow = createDailyChallengeNow;   // HTTP "run now"
