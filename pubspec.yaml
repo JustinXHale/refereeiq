@@ -10,7 +10,7 @@ description: "RefereeIQ – Rugby’s Laws, Explained Like Never Before
   Rugby is a game where the referee shapes the outcome more than in most sports. RefereeIQ gives you direct access to that perspective — anytime, anywhere."
 
 publish_to: 'none'
-version: 0.9.1+0
+version: 0.9.3+1
 
 environment:
   sdk: ^3.8.1

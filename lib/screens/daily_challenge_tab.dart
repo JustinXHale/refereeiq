@@ -4,8 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:RefereeIQ/services/firestore_service.dart';
-import 'package:RefereeIQ/screens/congratulations_screen.dart';
-
+import 'package:RefereeIQ/screens/challenge_complete_screen.dart';
 
 class ChallengeQuestion {
   final String prompt;
@@ -43,14 +42,16 @@ class DailyChallengeTab extends StatefulWidget {
 
 class _DailyChallengeTabState extends State<DailyChallengeTab>
     with AutomaticKeepAliveClientMixin {
-  // Loaded from Firestore (instead of hardcoded)
+  // Loaded from Firestore
   List<ChallengeQuestion> _questions = [];
 
   // UI/state
   int _currentIndex = 0;
   bool _isSubmitted = false;
-  bool _isFinished = false;
+  bool _isFinished = false; // show “already completed” view inside the tab
+  bool _isFinishing = false; // guard double-taps on Finish
   int _totalPoints = 0;
+  int? _finalRank; // optional rank (not shown on the “already completed” card)
 
   // Loading state
   bool _loading = true;
@@ -73,9 +74,11 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
           .get();
 
       if (!snap.exists) {
+        // Even if there’s no doc yet, check if we already finished this block
+        await _loadChallengeState();
         setState(() {
           _loading = false;
-          _loadError = 'empty'; // sentinel so we show our custom UI
+          _loadError = _isFinished ? null : 'empty';
         });
         return;
       }
@@ -83,19 +86,19 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
       final data = snap.data()!;
       final arr = (data['questions'] as List<dynamic>);
       final qs = arr
-          .map((e) => ChallengeQuestion.fromMap(
-        Map<String, dynamic>.from(e as Map),
-      ))
+          .map((e) =>
+          ChallengeQuestion.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList();
 
       setState(() {
-        // reset transient state on new load
         _questions = qs;
         _loading = false;
         _currentIndex = 0;
         _isSubmitted = false;
         _isFinished = false;
+        _isFinishing = false;
         _totalPoints = 0;
+        _finalRank = null;
       });
 
       // Restore local completion state (if user already finished this block)
@@ -108,16 +111,33 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     }
   }
 
-  // === Local completion state (per user, per block) ===
+// === Local & remote completion state (per user, per block) ===
   Future<void> _loadChallengeState() async {
-    final prefs = await SharedPreferences.getInstance();
     final user = FirebaseAuth.instance.currentUser;
-    final todayKey = _todayKey(); // includes -am / -pm
+    if (user == null) return;
 
-    if (user != null &&
-        prefs.getBool('challenge_done_${user.uid}_$todayKey') == true) {
+    final todayKey = _todayKey(); // e.g., 2025-08-10-am
+
+    // 1) Cross‑device check: if an attempt exists in Firestore, we’re done.
+    final attemptsRef = FirebaseFirestore.instance
+        .collection('challenge_attempts')
+        .doc('${user.uid}_$todayKey');
+
+    final attemptSnap = await attemptsRef.get();
+    if (attemptSnap.exists) {
+      final data = attemptSnap.data()!;
       setState(() {
-        _isFinished = true;
+        _isFinished = true;                 // <- shows the finished/complete state
+        _totalPoints = (data['score'] ?? 0) as int;
+      });
+      return;
+    }
+
+    // 2) Same‑device continuity: fall back to local prefs.
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('challenge_done_${user.uid}_$todayKey') == true) {
+      setState(() {
+        _isFinished = true;                 // <- same finished/complete state
         _totalPoints =
             prefs.getInt('challenge_score_${user.uid}_$todayKey') ?? 0;
       });
@@ -149,6 +169,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
 
   // === Quiz flow ===
   void _handleSubmit() {
+    if (_isSubmitted) return; // safety
     setState(() {
       _isSubmitted = true;
       final q = _questions[_currentIndex];
@@ -167,62 +188,85 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
       return;
     }
 
-    // finished
-    await _saveChallengeState();
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    // Final question -> finish
+    if (_isFinishing) return;
+    setState(() => _isFinishing = true);
 
-    final todayKey = _todayDocId(); // e.g., 2025-08-10-am
-    final attemptsRef = FirebaseFirestore.instance
-        .collection('challenge_attempts')
-        .doc('${user.uid}_$todayKey');
+    try {
+      await _saveChallengeState();
 
-    final attemptSnapshot = await attemptsRef.get();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final todayKey = _todayDocId();
+        final attemptsRef = FirebaseFirestore.instance
+            .collection('challenge_attempts')
+            .doc('${user.uid}_$todayKey');
 
-    if (!attemptSnapshot.exists) {
-      final profileSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final profileData = profileSnapshot.data();
+        final attemptSnapshot = await attemptsRef.get();
 
-      if (profileData != null) {
-        await FirestoreService().submitScore(
-          uid: user.uid,
-          name: profileData['name'] ?? 'Guest',
-          state: profileData['state'] ?? 'Unknown',
-          type: profileData['affiliation'] ?? 'Unknown',
-          score: _totalPoints,
-        );
+        if (!attemptSnapshot.exists) {
+          final profileSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+          final profileData = profileSnapshot.data();
 
-        await attemptsRef.set({
-          'uid': user.uid,
-          'date': Timestamp.now(),
-          'score': _totalPoints,
-        });
+          if (profileData != null) {
+            await FirestoreService().submitScore(
+              uid: user.uid,
+              name: profileData['name'] ?? 'Guest',
+              state: profileData['state'] ?? 'Unknown',
+              type: profileData['affiliation'] ?? 'Unknown',
+              score: _totalPoints,
+            );
+
+            await attemptsRef.set({
+              'uid': user.uid,
+              'date': Timestamp.now(),
+              'score': _totalPoints,
+            });
+          }
+        }
       }
-    } else {
-      debugPrint('User has already submitted a challenge for $todayKey.');
-    }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Saved locally. Leaderboard may take a moment.')));
+      }
+    } finally {
+      if (!mounted) return;
+      _isFinishing = false;
 
-    // 🎯 NEW: compute rank, then navigate to CongratulationsScreen
-    final rank = await FirestoreService().getRankForCurrentBlock(uid: user.uid);
-    if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CongratulationsScreen(
-          score: _totalPoints,
-          maxScore: _maxPoints,
-          rank: rank,
+      // Navigate to the completion screen; allow user to refresh when the next block drops
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChallengeCompleteScreen(
+            score: _totalPoints,
+            maxScore: _maxPoints,
+            nextDropLabel: _nextDropLabel(),
+          ),
         ),
-      ),
-    );
+      );
+
+      // If they tapped Refresh on that screen, reload today’s challenge
+      if (result == 'refresh') {
+        setState(() => _loading = true);
+        await _fetchToday();
+      }
+    }
+  }
+
+  // Single primary button handler
+  void _onPrimaryButtonTap() {
+    if (!_isSubmitted) {
+      _handleSubmit();
+    } else {
+      _handleNextOrFinish();
+    }
   }
 
   String _nextDropLabel() {
-    // Your schedule: 8:30 AM & 8:30 PM Central Time
-    // For simplicity, we format using the device locale/time and add "CT" to the label.
-    // (If you want true timezone conversion, we can add a tz package later.)
+    // Schedule: 8:30 AM & 8:30 PM Central Time
     final now = DateTime.now();
     final todayAm = DateTime(now.year, now.month, now.day, 8, 30);
     final todayPm = DateTime(now.year, now.month, now.day, 20, 30);
@@ -236,15 +280,14 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
       next = todayAm.add(const Duration(days: 1));
     }
 
-    // Simple human label
     final hour = (next.hour % 12 == 0) ? 12 : next.hour % 12;
     final minute = next.minute.toString().padLeft(2, '0');
     final ampm = next.hour < 12 ? 'AM' : 'PM';
 
-    // Sat, Aug 10 • 8:30 AM CT
-    final weekdayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    final monthNames = [
-      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+    const weekdayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     final weekday = weekdayNames[(next.weekday + 6) % 7];
     final month = monthNames[next.month - 1];
@@ -252,6 +295,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     return '$weekday, $month ${next.day} • $hour:$minute $ampm CT';
   }
 
+  // --- Inline empty state (no challenge yet) ---
   Widget _buildChallengeEmptyState(ColorScheme colorScheme) {
     return Center(
       child: Padding(
@@ -259,8 +303,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Your app icon (fallback to an icon if asset missing)
-            // If you prefer not to use an asset, replace with Icon(Icons.flag_outlined, size: 64, color: Colors.grey.shade400)
             Image.asset(
               'assets/icons/app_icon.png',
               width: 80,
@@ -294,19 +336,18 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
               style: FilledButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
               ),
               onPressed: () async {
                 setState(() => _loading = true);
-                await _fetchToday(); // re-check Firestore
+                await _fetchToday();
               },
-              child: Text(
-                'Refresh',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-              ),
+              child: Text('Refresh',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -314,24 +355,66 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
     );
   }
 
-
+  // --- Inline “already completed” view ---
+  Widget _buildAlreadyCompleted(ColorScheme colorScheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.emoji_events, size: 80, color: colorScheme.primary),
+            const SizedBox(height: 16),
+            Text('Challenge complete!',
+                style: GoogleFonts.inter(
+                    fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text('You scored $_totalPoints points this block.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.black54)),
+            const SizedBox(height: 12),
+            Text('Next drop: ${_nextDropLabel()}',
+                style:
+                GoogleFonts.inter(fontSize: 14, color: Colors.black54)),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () async {
+                setState(() => _loading = true);
+                await _fetchToday();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              child: Text('Refresh',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Loading / error / empty guards
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_loadError == 'empty') {
-      return _buildChallengeEmptyState(Theme.of(context).colorScheme);
-    }
-    if (_loadError != null) {
-      // Any other error
-      return Center(child: Text(_loadError!));
-    }
+    if (_loading) return const Center(child: CircularProgressIndicator());
+
+    // If we know they finished this block, show the completion view first
+    if (_isFinished) return _buildAlreadyCompleted(colorScheme);
+
+    // Only show the empty state if not finished and no doc yet
+    if (_loadError == 'empty') return _buildChallengeEmptyState(colorScheme);
+
+    if (_loadError != null) return Center(child: Text(_loadError!));
+
     if (_questions.isEmpty) {
       return const Center(child: Text('No questions available for this block.'));
     }
@@ -361,11 +444,8 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Center(
-                      child: Icon(
-                        Icons.play_circle_outline,
-                        size: 64,
-                        color: Colors.black38,
-                      ),
+                      child: Icon(Icons.play_circle_outline,
+                          size: 64, color: Colors.black38),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -408,14 +488,15 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
             }
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: GestureDetector(
                 onTap: _isSubmitted
                     ? null
                     : () => setState(() => q.selectedIndex = i),
                 child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
                     color: bg,
                     borderRadius: BorderRadius.circular(8),
@@ -427,81 +508,41 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
             );
           }),
           const SizedBox(height: 24),
+
+          // Single primary button (Submit -> Next/Finish)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      disabledForegroundColor: Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                    ),
-                    onPressed: (q.selectedIndex == -1 || _isSubmitted)
-                        ? null
-                        : _handleSubmit,
-                    child: Text('Submit',
-                        style:
-                        GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      disabledForegroundColor: Colors.grey.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                    ),
-                    onPressed: _isSubmitted ? _handleNextOrFinish : null,
-                    child: Text(
-                      _isSubmitted
-                          ? (_currentIndex == _questions.length - 1
-                          ? 'Finish'
-                          : 'Next')
-                          : 'Next',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.grey.shade600,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(32)),
+              ),
+              onPressed: (_isFinishing ||
+                  (q.selectedIndex == -1 && !_isSubmitted))
+                  ? null
+                  : _onPrimaryButtonTap,
+              child: _isFinishing
+                  ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : Text(
+                !_isSubmitted
+                    ? 'Submit'
+                    : (_currentIndex == _questions.length - 1
+                    ? 'Finish'
+                    : 'Next'),
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCongratulations(ColorScheme colorScheme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.emoji_events, size: 80, color: colorScheme.primary),
-            const SizedBox(height: 24),
-            Text('Congratulations!',
-                style: GoogleFonts.inter(
-                    fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Text('You scored $_totalPoints out of $_maxPoints.',
-                style: GoogleFonts.inter(fontSize: 18),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            Text('Check out today’s leaderboard via the Leaderboard tab.',
-                textAlign: TextAlign.center),
-          ],
-        ),
       ),
     );
   }

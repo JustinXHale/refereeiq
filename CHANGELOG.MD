@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.3+1] - 2025-08-10
+### Changed
+- Updated Android app display name to "RefereeIQ" (capitalized) in `AndroidManifest.xml`.
+- Adjusted trophy icon size and spacing in Daily Challenge completion view.
+- Fine-tuned spacing between "You scored" and "Next drop" text.
+- Maintained challenge lock state without greying out completed challenges.
+
+### Fixed
+- Ensured completed challenges correctly show inline congratulations with score/rank.
+- Addressed case where Challenge History items could have missing law references.
+- Confirmed Daily Challenge limit logic is working as intended after refresh.
+- Removed false empty state when a completed challenge exists.
+
+### Maintenance
+- Flutter clean/build to resolve stale cache and state issues.
+
+
 ## [0.9.1+0] - 2025-08-09
 ### Added
 - Custom empty states for:
