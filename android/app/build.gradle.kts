@@ -5,6 +5,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+        import java.io.FileInputStream
+
+// Load signing props from android/key.properties
+val keystoreProps = Properties()
+val keystorePropsFile = rootProject.file("key.properties")
+if (keystorePropsFile.exists()) {
+    FileInputStream(keystorePropsFile).use { keystoreProps.load(it) }
+}
+
 android {
     namespace = "com.refereeiq.refereeiq"
     compileSdk = flutter.compileSdkVersion
@@ -28,10 +38,27 @@ android {
         versionName = flutter.versionName
     }
 
+    // --- Release signing using key.properties ---
+    signingConfigs {
+        create("release") {
+            keyAlias = (keystoreProps["keyAlias"] ?: "") as String
+            keyPassword = (keystoreProps["keyPassword"] ?: "") as String
+            val storePath = (keystoreProps["storeFile"] ?: "") as String
+            if (storePath.isNotEmpty()) {
+                storeFile = file(storePath)
+            }
+            storePassword = (keystoreProps["storePassword"] ?: "") as String
+        }
+    }
+
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the real release keystore (NOT debug)
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
+        // debug stays default
     }
 }
 

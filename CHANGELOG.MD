@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.4+0]
+### Changed
+- Filtering in the leaderboard. Added labels and changed default filtering to Daily.
+- Removed easy, medium, hard questions and just made it standard with 5 points for each question.
+- added sha for google auth signin
+- moved all prompts to single js function
+- delete account link in profile settings
+- update leaderboard player profile (still not complete, its not accessing photos)
+
 ## [0.9.3+1] - 2025-08-10
 ### Changed
 - Updated Android app display name to "RefereeIQ" (capitalized) in `AndroidManifest.xml`.

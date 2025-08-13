@@ -15,7 +15,7 @@ Explore “what if” scenarios for a deeper grasp of the game’s context.
 Unlike a law book that only gives you black-and-white text, RefereeIQ adds the missing layer: context. Know not just what the law says — but why a call was made, or why it wasn’t."
 
 publish_to: 'none'
-version: 0.9.3+2
+version: 0.9.4+0
 
 environment:
   sdk: ^3.8.1

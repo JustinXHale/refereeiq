@@ -1,5 +1,6 @@
-// Gen2 (v2) scheduler + HTTP "run now" with GPT generation
+// Gen2 (v2) scheduler + HTTP "run now" with GPT generation (POC 5×5pts, hardened)
 
+const { getAIConfig } = require('../config/ai');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onRequest }  = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
@@ -17,8 +18,6 @@ const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
 
 // --- Config ---
 const TIME_ZONE = 'America/Chicago';
-const TARGET = { easy: 2, medium: 2, hard: 1 }; // 2×3pt, 2×5pt, 1×7pt
-const MODEL  = 'gpt-4o-mini';                   // fast+cheap; change if you want
 
 // -------- Helpers --------
 function currentBlock(now = new Date()) {
@@ -37,39 +36,43 @@ function idFor(dateStr, block) { // YYYY-MM-DD + am|pm
 function shuffle(a){ for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function sample(arr,n){ return shuffle([...arr]).slice(0, Math.min(n, arr.length)); }
 
+// Normalize to our strict schema (5 pts, "standard")
 function normalize(q) {
   const options = Array.isArray(q.options) ? q.options.map(String) : [];
-  const points = Number.isInteger(q.points) ? q.points : 1;
-  const difficulty = (q.difficulty || '').toString().toLowerCase();
-  const tag = ['easy','medium','hard'].includes(difficulty)
-    ? difficulty
-    : points === 3 ? 'easy'
-    : points === 5 ? 'medium'
-    : points === 7 ? 'hard'
-    : 'medium';
-
   return {
     prompt: String(q.prompt ?? ''),
     options,
     correctIndex: Number.isInteger(q.correctIndex) ? q.correctIndex : 0,
-    points,
-    difficulty: tag,
+    points: 5,
+    difficulty: 'standard',
     lawReference: q.lawReference ? String(q.lawReference) : null,
-    videoUrl: q.videoUrl ? String(q.videoUrl) : null,
-    source: 'ai',
+    videoUrl: null,
+    source: q.source || 'ai',
   };
 }
 
+// Basic local shape/consistency validation
+function basicValidate(q) {
+  if (!q || typeof q.prompt !== 'string' || !q.prompt.trim()) return 'bad prompt';
+  if (!Array.isArray(q.options) || q.options.length !== 4) return 'need 4 options';
+  const uniq = new Set(q.options.map(o => String(o).trim()));
+  if (uniq.size !== 4) return 'options must be distinct';
+  if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex > 3) return 'bad index';
+  if (q.points !== 5) return 'points must be 5';
+  if (q.difficulty !== 'standard') return 'difficulty must be "standard"';
+  if (q.videoUrl !== null) return 'videoUrl must be null';
+  return null;
+}
+function filterValid(questions) {
+  return questions.filter(q => basicValidate(q) === null);
+}
+
 function extractJson(text) {
-  // try raw
   try { return JSON.parse(text); } catch {}
-  // try ```json ... ```
   const m = text.match(/```json\s*([\s\S]*?)```/i);
   if (m) { try { return JSON.parse(m[1]); } catch {} }
-  // try any fenced ```
   const m2 = text.match(/```\s*([\s\S]*?)```/);
   if (m2) { try { return JSON.parse(m2[1]); } catch {} }
-  // last resort: strip leading/trailing junk
   const start = text.indexOf('[');
   const end   = text.lastIndexOf(']');
   if (start >= 0 && end > start) {
@@ -79,7 +82,7 @@ function extractJson(text) {
 }
 
 // --- OpenAI call (uses native fetch, Node 20) ---
-async function callOpenAIJSON(prompt, apiKey) {
+async function callOpenAIJSON(prompt, apiKey, { model, temperature }) {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -87,8 +90,8 @@ async function callOpenAIJSON(prompt, apiKey) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.4,
+      model,
+      temperature,
       messages: [
         { role: 'system', content:
 `You are Sofia, an expert Rugby Union assistant that writes fair, factual, law-accurate multiple-choice questions.
@@ -110,37 +113,94 @@ OUTPUT STRICTLY JSON. No commentary, no code fences unless asked.`
   return extractJson(content);
 }
 
+// Deterministic self-check to confirm correctIndex + law plausibility
+async function verifyQuestionsWithModel(questions, apiKey, model) {
+  const payload = {
+    model,            // use the same model you generated with (or a stricter one if you prefer)
+    temperature: 0.0, // deterministic verify
+    messages: [{
+      role: 'system',
+      content:
+`You verify Rugby Union MCQs. For each question:
+- Choose the single correct option index (0..3).
+- Briefly justify via World Rugby Law reference if relevant.
+- Return STRICT JSON array of objects: { "agree": true|false, "correctIndex": number, "lawOk": true|false }.
+No prose.`
+    }, {
+      role: 'user',
+      content: JSON.stringify(questions.map(q => ({
+        prompt: q.prompt,
+        options: q.options,
+        claimedCorrectIndex: q.correctIndex,
+        lawReference: q.lawReference
+      })))
+    }]
+  };
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`verify HTTP ${res.status}: ${t}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content || '[]';
+
+  let verdicts;
+  try { verdicts = JSON.parse(content); } catch { verdicts = []; }
+
+  const out = [];
+  for (let i = 0; i < questions.length; i++) {
+    const v = verdicts[i];
+    const q = questions[i];
+    if (!v || typeof v !== 'object') continue;
+
+    const indexMatch = v.correctIndex === q.correctIndex;
+    const lawOk = (v.lawOk === true) || q.lawReference === null;
+    const agree = v.agree === true;
+
+    if (agree && indexMatch && lawOk) out.push(q);
+  }
+  return out;
+}
+
 function buildPrompt({ usedPrompts }) {
-  // Make sure we avoid prompts already used earlier today
   const avoid = Array.from(usedPrompts || []);
   const avoidBlock = avoid.length
     ? `Avoid reusing these prompt texts today:\n- ${avoid.join('\n- ')}`
     : `Do not reuse any prompt text used earlier today.`;
 
-  // Exactly 5 questions with the desired mix
   return `
 Create exactly 5 Rugby Union multiple-choice questions covering laws and match scenarios.
-Mix and scoring MUST be:
-- 2 EASY worth 3 points
-- 2 MEDIUM worth 5 points
-- 1 HARD worth 7 points
+Scoring: every question is worth 5 points.
 
-Each item MUST be an object with fields:
+STRICT RULES:
+- All answers MUST be based only on the official 2025 World Rugby Laws of the Game (Rugby Union), no outside interpretations.
+- If unsure, omit the question rather than guess.
+- Ensure the correct answer is the ONLY correct answer.
+- Wording must match official law terminology exactly.
+- Do not mix Rugby League or other sports content.
+
+Each item MUST be an object with fields ONLY:
 - prompt (string, <= 150 chars, unique today)
 - options (array of 4 concise strings)
 - correctIndex (0..3)
-- points (3|5|7)
-- difficulty ("easy"|"medium"|"hard")
+- points (always 5)
+- difficulty ("standard")
 - lawReference (string like "Law 18 - Mark", or null)
 - videoUrl (null)
 
 Constraints:
-- Stay within World Rugby Laws (Rugby Union).
-- Keep answers unambiguous & factually correct for current law interpretations.
 - Include a variety (set-piece, offside, tackle/ruck/maul, foul play, advantage, restarts).
 - ${avoidBlock}
 
-Return ONLY a JSON array (no prose).`;
+Return ONLY a JSON array (no prose, no code fences).
+`;
 }
 
 // --- Fallback: use existing question_bank if AI fails ---
@@ -150,25 +210,12 @@ async function fallbackFromBank({ usedPrompts }) {
 
   const all = snap.docs
     .map(d => normalize({ ...d.data(), source: 'bank' }))
-    .filter(q => q.prompt && q.options?.length >= 2 && q.correctIndex < q.options.length)
+    .filter(q => q.prompt && q.options?.length === 4 && q.correctIndex < q.options.length)
     .filter(q => !usedPrompts.has(q.prompt));
 
-  const easy   = all.filter(q => q.difficulty === 'easy'   || q.points === 3);
-  const medium = all.filter(q => q.difficulty === 'medium' || q.points === 5);
-  const hard   = all.filter(q => q.difficulty === 'hard'   || q.points === 7);
-
-  let picked = [];
-  picked.push(...sample(easy,   TARGET.easy));
-  picked.push(...sample(medium, TARGET.medium));
-  picked.push(...sample(hard,   TARGET.hard));
-
-  const need = 5 - picked.length;
-  if (need > 0) {
-    const chosen = new Set(picked.map(q => q.prompt));
-    const remaining = shuffle(all).filter(q => !chosen.has(q.prompt));
-    picked.push(...remaining.slice(0, need));
-  }
-  return picked.slice(0, 5);
+  // just grab any 5 valid after normalization
+  const picked = sample(all, 5);
+  return filterValid(picked);
 }
 
 // Core generator used by both schedule + HTTP
@@ -192,26 +239,32 @@ async function generateFor({ dateId, apiKey }) {
   let questions = null;
   try {
     const prompt = buildPrompt({ usedPrompts });
-    const raw = await callOpenAIJSON(prompt, apiKey);
+    const aiCfg = await getAIConfig();              // ← read shared config
+    const { model, temperature } = aiCfg.challenge; // e.g. gpt-4o @ 0.4
+    const raw = await callOpenAIJSON(prompt, apiKey, { model, temperature });
     if (!Array.isArray(raw)) throw new Error('Model did not return an array');
-    questions = raw.map(normalize);
 
-    // enforce counts & shape
-    const okLen = questions.length >= 5;
-    const counts = {
-      easy:   questions.filter(q => q.points === 3 || q.difficulty === 'easy').length,
-      medium: questions.filter(q => q.points === 5 || q.difficulty === 'medium').length,
-      hard:   questions.filter(q => q.points === 7 || q.difficulty === 'hard').length,
-    };
-    if (!okLen || counts.easy < 2 || counts.medium < 2 || counts.hard < 1) {
-      throw new Error(`Mix invalid from AI: ${JSON.stringify(counts)}`);
+    // normalize + local shape
+    questions = filterValid(raw.map(normalize));
+
+    // second-pass verify (deterministic)
+    try {
+      const verified = await verifyQuestionsWithModel(
+        questions,
+        OPENAI_API_KEY.value(),
+        model // pass the same model you generated with (or a stricter one)
+      );
+      questions = verified;
+    } catch (e) {
+      console.warn('[daily] verify step failed:', e.message);
     }
 
-    // trim to exactly the mix (2/2/1)
-    const easyQs   = questions.filter(q => q.points === 3 || q.difficulty === 'easy').slice(0, 2);
-    const mediumQs = questions.filter(q => q.points === 5 || q.difficulty === 'medium').slice(0, 2);
-    const hardQs   = questions.filter(q => q.points === 7 || q.difficulty === 'hard').slice(0, 1);
-    questions = [...easyQs, ...mediumQs, ...hardQs];
+    if (!questions || questions.length < 5) {
+      throw new Error(`Too few verified questions: ${questions?.length || 0}`);
+    }
+
+    // exactly 5
+    questions = questions.slice(0, 5);
   } catch (e) {
     console.warn('[daily] AI generation failed:', e.message);
   }
@@ -230,8 +283,8 @@ async function generateFor({ dateId, apiKey }) {
       prompt: 'Which law allows a quick throw-in?',
       options: ['Law 15','Law 16','Law 17','Law 18'],
       correctIndex: 3,
-      points: 3,
-      difficulty: 'easy',
+      points: 5,
+      difficulty: 'standard',
       lawReference: 'Law 18',
       videoUrl: null,
       source: 'placeholder',
@@ -255,7 +308,7 @@ async function generateFor({ dateId, apiKey }) {
 
 // -------- Exports --------
 
-// Scheduled (twice daily: 6:05am & 6:05pm, America/Chicago)
+// Scheduled (twice daily: 8:30am & 8:30pm CT)
 exports.createDailyChallenge = onSchedule(
   { schedule: '30 8,20 * * *', timeZone: TIME_ZONE, secrets: [OPENAI_API_KEY] },
   async () => {
@@ -270,18 +323,16 @@ exports.createDailyChallengeNow = onRequest(
   { secrets: [OPENAI_API_KEY] },
   async (req, res) => {
     try {
-      const date = (req.query.date || '').toString();           // optional
+      const date = (req.query.date || '').toString();                 // optional
       const block = (req.query.block || '').toString().toLowerCase(); // optional
       let id;
 
-      if (date && (block === 'am' || block === 'pm')) {
+      if (date && (block === 'am' || 'pm' === block)) {
         id = idFor(date, block);
       } else if (date && !block) {
-        // if only date is given, default to current block for that date
         const now = new Date();
         id = idFor(date, currentBlock(now));
       } else {
-        // default: today + current block
         id = todayId(new Date());
       }
 

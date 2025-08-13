@@ -1,4 +1,4 @@
-// Fixed profile_screen.dart
+// profile_screen.dart — unified self/other profile with conditional editing
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -8,10 +8,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
-import '../widgets/affiliation_dropdown.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String? viewUid; // whose profile to view; null = current user
+
+  const ProfileScreen({super.key, this.viewUid});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -21,11 +22,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final List<String> _states = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+    'AL',
+    'AK',
+    'AZ',
+    'AR',
+    'CA',
+    'CO',
+    'CT',
+    'DE',
+    'FL',
+    'GA',
+    'HI',
+    'ID',
+    'IL',
+    'IN',
+    'IA',
+    'KS',
+    'KY',
+    'LA',
+    'ME',
+    'MD',
+    'MA',
+    'MI',
+    'MN',
+    'MS',
+    'MO',
+    'MT',
+    'NE',
+    'NV',
+    'NH',
+    'NJ',
+    'NM',
+    'NY',
+    'NC',
+    'ND',
+    'OH',
+    'OK',
+    'OR',
+    'PA',
+    'RI',
+    'SC',
+    'SD',
+    'TN',
+    'TX',
+    'UT',
+    'VT',
+    'VA',
+    'WA',
+    'WV',
+    'WI',
+    'WY'
   ];
 
   final _auth = FirebaseAuth.instance;
@@ -47,6 +93,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _dailyScore = 0;
   int _monthlyScore = 0;
   int _lifetimeScore = 0;
+
+  bool get isSelf {
+    final me = _auth.currentUser?.uid;
+    return widget.viewUid == null || widget.viewUid == me;
+  }
 
   @override
   void initState() {
@@ -70,24 +121,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
+    final me = _auth.currentUser;
+    if (me == null && widget.viewUid == null) return;
 
-    final doc = await _authService.getUserProfile(user.uid);
+    final uidToLoad = widget.viewUid ?? me!.uid;
+
+    final doc = await _authService.getUserProfile(uidToLoad);
     final data = doc.data() ?? {};
+
     _nameController.text = data['name'] ?? '';
-    _emailController.text = user.email ?? '';
+    _emailController.text = data['email'] ?? (isSelf ? (me?.email ?? '') : '');
     _favoriteTeamController.text = data['favoriteTeam'] ?? '';
     _cityController.text = data['city'] ?? '';
     _state = data['state'];
     _affiliation = data['affiliation'];
 
     final rawUrl = data['photoURL'] as String?;
-    if (rawUrl != null && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+    if (rawUrl != null &&
+        (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
       _remotePhotoUrl = rawUrl;
+    } else {
+      _remotePhotoUrl = null;
     }
 
-    final scoreSnap = await FirebaseFirestore.instance.collection('leaderboard').doc(user.uid).get();
+    final scoreSnap = await FirebaseFirestore.instance.collection('leaderboard')
+        .doc(uidToLoad)
+        .get();
     final scores = scoreSnap.data() ?? {};
     _dailyScore = scores['daily'] ?? 0;
     _monthlyScore = scores['monthly'] ?? 0;
@@ -97,14 +156,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _detailController.text = data['refereeAssociation'] ?? '';
     } else if (_affiliation == 'Player' || _affiliation == 'Coach') {
       _detailController.text = data['homeTeam'] ?? '';
+    } else {
+      _detailController.clear();
     }
 
     setState(() {});
   }
 
   Future<void> _pickImage() async {
+    if (!isSelf) return;
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    final picked = await picker.pickImage(
+        source: ImageSource.gallery, imageQuality: 75);
     if (picked != null) {
       setState(() => _image = File(picked.path));
     }
@@ -118,6 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _submitForm() async {
+    if (!isSelf) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
@@ -136,12 +200,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'city': _cityController.text.trim(),
       'state': _state,
       'affiliation': _affiliation,
+      'photoURL': _remotePhotoUrl,
+      // keep whatever’s already set if no new upload
     };
 
     if (_affiliation == 'Referee') {
       profile['refereeAssociation'] = _detailController.text.trim();
+      profile.remove('homeTeam');
     } else if (_affiliation == 'Player' || _affiliation == 'Coach') {
       profile['homeTeam'] = _detailController.text.trim();
+      profile.remove('refereeAssociation');
+    } else {
+      profile.remove('homeTeam');
+      profile.remove('refereeAssociation');
     }
 
     try {
@@ -151,27 +222,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _remotePhotoUrl = url;
       }
       await _authService.saveUserProfile(user.uid, profile);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved!')),
       );
     } on FirebaseException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Upload failed: ${e.message}')),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  // ==== Delete Account flow ====
+  Future<void> _deleteAccount() async {
+    if (!isSelf) return;
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) =>
+          AlertDialog(
+            title: const Text(
+                'Delete account?', style: TextStyle(color: Colors.black)),
+            content: const Text(
+              'This permanently deletes your account and profile data. This cannot be undone.',
+              style: TextStyle(color: Colors.black),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                    'Cancel', style: TextStyle(color: Colors.black)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                    'Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+    if (confirm != true) return;
+
+    try {
+      final usesPassword = user.providerData.any((p) =>
+      p.providerId == 'password');
+
+      String? currentPassword;
+      if (usesPassword) {
+        currentPassword = await _askForPassword();
+        if (currentPassword == null || currentPassword.isEmpty) return;
+      }
+
+      setState(() => _loading = true);
+
+      await _authService.deleteAccount(currentPassword: currentPassword);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account deleted')),
+      );
+      // Return to welcome; auth listener will also handle this in most apps
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<String?> _askForPassword() async {
+    String? password;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Confirm Password'),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Password'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                    'Cancel',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
+                )
+            ),
+            TextButton(onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red,
+                  ),
+                )
+            ),
+          ],
+        );
+      },
+    );
+    return password;
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme
+        .of(context)
+        .colorScheme;
 
     return FutureBuilder<void>(
       future: _loadFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         }
 
         return Scaffold(
@@ -182,15 +361,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Center(
                   child: GestureDetector(
-                    onTap: _pickImage,
+                    onTap: isSelf ? _pickImage : null,
                     child: CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage: _image != null
                           ? FileImage(_image!)
-                          : (_remotePhotoUrl != null ? NetworkImage(_remotePhotoUrl!) : null) as ImageProvider?,
+                          : (_remotePhotoUrl != null ? NetworkImage(
+                          _remotePhotoUrl!) : null) as ImageProvider?,
                       child: (_image == null && _remotePhotoUrl == null)
-                          ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                          ? const Icon(
+                          Icons.person, size: 60, color: Colors.grey)
                           : null,
                     ),
                   ),
@@ -202,11 +383,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       TextFormField(
                         controller: _nameController,
+                        enabled: isSelf,
                         decoration: const InputDecoration(
                           labelText: 'Full Name',
                           border: OutlineInputBorder(),
                         ),
-                        validator: (val) => val!.isEmpty ? 'Required' : null,
+                        validator: (val) =>
+                        isSelf ? (val!.isEmpty
+                            ? 'Required'
+                            : null) : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -220,11 +405,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _favoriteTeamController,
+                        enabled: isSelf,
                         decoration: const InputDecoration(
                           labelText: 'Favorite Team',
                           border: OutlineInputBorder(),
                         ),
-                        validator: (val) => val!.isEmpty ? 'Required' : null,
+                        validator: (val) =>
+                        isSelf ? (val!.isEmpty
+                            ? 'Required'
+                            : null) : null,
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -232,11 +421,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _cityController,
+                              enabled: isSelf,
                               decoration: const InputDecoration(
                                 labelText: 'City',
                                 border: OutlineInputBorder(),
                               ),
-                              validator: (val) => val!.isEmpty ? 'Required' : null,
+                              validator: (val) =>
+                              isSelf ? (val!.isEmpty
+                                  ? 'Required'
+                                  : null) : null,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -247,11 +440,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 border: OutlineInputBorder(),
                               ),
                               value: _state,
-                              items: _states
-                                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                              items: _states.map((s) =>
+                                  DropdownMenuItem(value: s, child: Text(s)))
                                   .toList(),
-                              onChanged: (v) => setState(() => _state = v),
-                              validator: (val) => val == null ? 'Required' : null,
+                              onChanged: isSelf ? (v) =>
+                                  setState(() => _state = v) : null,
+                              validator: (val) =>
+                              isSelf ? (val == null
+                                  ? 'Required'
+                                  : null) : null,
                             ),
                           ),
                         ],
@@ -264,50 +461,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         value: _affiliation,
                         items: ['Referee', 'Player', 'Coach', 'Fan']
-                            .map((a) => DropdownMenuItem(value: a, child: Text(a)))
+                            .map((a) =>
+                            DropdownMenuItem(value: a, child: Text(a)))
                             .toList(),
-                        onChanged: (v) => setState(() {
-                          _affiliation = v;
-                          _detailController.clear();
-                        }),
-                        validator: (val) => val == null ? 'Required' : null,
+                        onChanged: isSelf
+                            ? (v) =>
+                            setState(() {
+                              _affiliation = v;
+                              _detailController.clear();
+                            })
+                            : null,
+                        validator: (val) =>
+                        isSelf ? (val == null
+                            ? 'Required'
+                            : null) : null,
                       ),
                       const SizedBox(height: 16),
                       if (_affiliation == 'Referee')
                         TextFormField(
                           controller: _detailController,
+                          enabled: isSelf,
                           decoration: const InputDecoration(
                             labelText: 'Referee Association',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (val) => val!.isEmpty ? 'Required' : null,
+                          validator: (val) =>
+                          isSelf ? (val!.isEmpty
+                              ? 'Required'
+                              : null) : null,
                         ),
                       if (_affiliation == 'Player' || _affiliation == 'Coach')
                         TextFormField(
                           controller: _detailController,
+                          enabled: isSelf,
                           decoration: const InputDecoration(
                             labelText: 'Home Team',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (val) => val!.isEmpty ? 'Required' : null,
+                          validator: (val) =>
+                          isSelf ? (val!.isEmpty
+                              ? 'Required'
+                              : null) : null,
                         ),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          minimumSize: const Size(double.infinity, 56),
-                          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+
+                      if (isSelf)
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
+                            minimumSize: const Size(double.infinity, 56),
+                            textStyle: GoogleFonts.inter(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          onPressed: _loading ? null : _submitForm,
+                          child: _loading
+                              ? const CircularProgressIndicator(color: Colors
+                              .white)
+                              : const Text('Save Profile'),
                         ),
-                        onPressed: _loading ? null : _submitForm,
-                        child: _loading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Save Profile'),
-                      ),
+
                       const SizedBox(height: 24),
                       Text(
                         'Leaderboard Points',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.inter(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
@@ -334,6 +552,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
+
+                      const SizedBox(height: 32),
+
+                      if (isSelf)
+                        TextButton(
+                          onPressed: _loading ? null : _deleteAccount,
+                          child: const Text(
+                            'Delete Account',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -348,15 +582,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildScoreColumn(String label, int value) {
     return Column(
       children: [
-        Text(
-          value.toString(),
-          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        Text(value.toString(), style: GoogleFonts.inter(
+            fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700]),
-        ),
+        Text(label,
+            style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[700])),
       ],
     );
   }
