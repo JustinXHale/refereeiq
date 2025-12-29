@@ -1,0 +1,527 @@
+{
+  "version": "2025.0",
+  "category": "guideline",
+  "source": "local://gldo",
+  "items": [
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "GLDO Overview",
+      "text": "Goal-line dropout (GLDO) outcomes depend on (1) who put the ball in-goal and how, (2) who makes the ball dead and how, and (3) restart options described in Law 12 (Kick-off & Restart Kicks) and in-goal outcomes described in Law 21. The scenarios below capture common permutations for 15s Rugby Union.",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "goal line drop out",
+        "goal-line drop-out",
+        "goal line dropout",
+        "goal-line dropout",
+        "22m DO",
+        "22-metre drop-out",
+        "22m drop-out",
+        "GLDO",
+        "in-goal",
+        "restart"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Abbreviations",
+      "text": "5m Scrum = attacking feed; 22m DO = 22-metre drop-out; DBL = dead-ball line; FOP = field-of-play; GLDO = goal-line drop-out; HW = half-way line; TIG = touch-in-goal.",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "abbreviations",
+        "legend",
+        "keys"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Restart Options (1–3)",
+      "text": "Option 1: 22m DO or scrum from where ball was kicked (see Law 12). Option 2: Kick retaken or scrum back at centre of restart line (see Law 12). Option 3: If without delay, kick retaken or scrum at centre of restart line; if delayed and made dead in-goal, GLDO (see Law 12, Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "options",
+        "restart",
+        "kick retaken",
+        "scrum back"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 1 — Attack carry; Attack make dead TIG/DBL from in-goal",
+      "text": "Outcome: 22m DO by defence (see Law 12; made dead in-goal).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "carry",
+        "attacking carry",
+        "TIG",
+        "DBL",
+        "22m DO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 2 — Attack carry; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21; attack knock-on in-goal).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "knock-on in-goal",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 3 — Attack carry; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21; defence knock-on in-goal).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 4 — Attack kick in open play; Attack make dead TIG/DBL",
+      "text": "Outcome: 22m DO by defence (see Law 12; ball kicked then made dead in-goal by attack).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "open play kick",
+        "TIG",
+        "DBL",
+        "22m DO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 5 — Attack kick in open play; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "open play",
+        "knock-on",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 6 — Attack kick in open play; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 7 — Attack goal attempt (PK/DG); Attack make dead TIG/DBL",
+      "text": "Outcome: 22m DO by defence (see Law 12; unsuccessful goal made dead in-goal by attack).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "penalty goal",
+        "drop goal",
+        "TIG",
+        "DBL",
+        "22m DO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 8 — Attack goal attempt (PK/DG); Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "PK",
+        "DG",
+        "knock-on",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 9 — Attack goal attempt (PK/DG); Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 10 — Attack restart (HW/22/GL); Attack make dead TIG/DBL",
+      "text": "Outcome: 22m DO by defence (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "halfway",
+        "22m",
+        "goal line",
+        "TIG",
+        "DBL"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 11 — Attack restart; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "knock-on",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 12 — Attack restart; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 13 — Attack charge-down; Attack make dead TIG/DBL",
+      "text": "Outcome: 22m DO by defence (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "TIG",
+        "DBL",
+        "22m DO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 14 — Attack charge-down; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "knock-on",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 15 — Attack charge-down; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 16 — Defence carry; Attack make dead TIG/DBL",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21; defence took ball in-goal, attack made dead).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "TIG",
+        "DBL",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 17 — Defence carry; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "knock-on",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 18 — Defence carry; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "defence knock-on"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 19 — Defence kick/knock back; Attack make dead TIG/DBL",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "kick back",
+        "knock back",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 20 — Defence kick/knock back; Attack knock forward in-goal",
+      "text": "Outcome: GLDO by defence (see Law 12 & Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "kick back",
+        "knock back",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 21 — Defence kick/knock back; Defence knock forward in-goal",
+      "text": "Outcome: 5m scrum to attacking team (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence knock-on",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 22 — Any team; Ball continues TIG/DBL",
+      "text": "Outcome: GLDO (see Law 12; ball runs into TIG/DBL).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "ball continues",
+        "touch-in-goal",
+        "dead ball line"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 23 — Any team; Held up in-goal",
+      "text": "Outcome: 5m scrum (see Law 21; held up).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "held up",
+        "goal area",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 24 — Attack kick (FK/PK not for goal); Ball continues TIG/DBL",
+      "text": "Outcome: GLDO (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "free kick",
+        "penalty kick",
+        "not at goal",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 25 — Attack kick (FK/PK not for goal); Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "free kick",
+        "penalty kick",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 26 — Goal attempt (PK/DG); Ball continues TIG/DBL",
+      "text": "Outcome: GLDO (see Law 12; unsuccessful attempt made dead beyond goal line).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "penalty goal",
+        "drop goal",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 27 — Goal attempt (PK/DG); Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "PK",
+        "DG",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 28 — Restart (HW/22/GL); Ball continues TIG/DBL",
+      "text": "Outcome: GLDO (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "kick off",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 29 — Restart (HW/22/GL); Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 30 — Charge-down; Ball continues TIG/DBL",
+      "text": "Outcome: GLDO (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 31 — Charge-down; Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 32 — Defence carry; Ball continues TIG/DBL",
+      "text": "Outcome: 5m scrum to attackers (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "TIG",
+        "DBL",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 33 — Defence carry; Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 34 — Defence kick/knock back; Ball continues TIG/DBL",
+      "text": "Outcome: 5m scrum to attackers (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "kick back",
+        "knock back",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 35 — Defence kick/knock back; Held up",
+      "text": "Outcome: 5m scrum (see Law 21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "kick back",
+        "knock back",
+        "held up"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 36 — Restart; Options 3 apply",
+      "text": "Outcome: GLDO if delay; otherwise kick retaken or scrum at centre of restart line (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "options 3",
+        "delay",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 37 — Charge-down; 22m DO (if applicable)",
+      "text": "Outcome: GLDO per scenario notes; some situations produce 22m DO (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "charge down",
+        "22m DO",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 38 — Restart; Options 2 apply",
+      "text": "Outcome: Kick retaken or scrum back at centre of restart line (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "options 2",
+        "scrum back"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 39 — Restart; 22m DO (if applicable)",
+      "text": "Outcome: GLDO or 22m DO depending on restart/sanction line details (see Law 12).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "22m DO",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 40 — Defence carry; 5m scrum",
+      "text": "Outcome: 5m scrum (attacking feed) — in-goal grounding/touch outcomes per Law 21.",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "defence carry",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 41 — Defence kick/knock back; 5m scrum",
+      "text": "Outcome: 5m scrum (attacking feed) — ball becomes dead in-goal per Law 21.",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "kick back",
+        "knock back",
+        "5m scrum"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Scenario 42 — Restart; GLDO",
+      "text": "Outcome: GLDO (see Law 12; restart situations where ball is made dead in-goal).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "restart",
+        "GLDO"
+      ]
+    },
+    {
+      "lawRef": "Guideline",
+      "sectionTitle": "Other GLDO Scenarios & Edge Cases",
+      "text": "Try if attackers ground legally (Law 21). Mark by defence in-goal → FK in line with mark, 5m out (Law 20/21 local policy). Deliberate knock into TIG/DBL → PK (Law 9 foul play + Law 21 outcome). Attack knock forward from FOP into in-goal → scrum to defence (≥5m) (Law 21). Restart kick crosses sanction line and blown back into own in-goal and made dead → 5m scrum to opponents (Law 12/21). Ball or ball carrier touches referee/non-player in-goal → see Law 6.11/6.12. Doubt over first grounder → 5m scrum, attacking feed (Law 21). Simultaneous ground + TIG/DBL → 22m DO (Law 12/21).",
+      "sourceUrl": "local://gldo",
+      "aliases": [
+        "edge cases",
+        "mark in-goal",
+        "referee contact",
+        "deliberate knock",
+        "wind",
+        "simultaneous touch",
+        "doubt first grounder"
+      ]
+    }
+  ]
+}

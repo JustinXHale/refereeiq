@@ -1,6 +1,16 @@
 # Changelog
 
-## [0.9.4+0]
+## [0.9.5+5]
+- Improved sofia questioning
+- added laws injest.js to pull from World Rugby
+- added law.js to chunk laws
+- added chat.js to detect online clarifications
+- added gldo_permutations.json and supplemental .js files 
+
+## [0.9.4+4]
+- update SHA for google signin
+
+## [0.9.4+3]
 ### Changed
 - Filtering in the leaderboard. Added labels and changed default filtering to Daily.
 - Removed easy, medium, hard questions and just made it standard with 5 points for each question.

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OpenAIService {
   static const String _functionUrl =
@@ -13,9 +14,17 @@ class OpenAIService {
     }).toList();
 
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return 'Please sign in to continue.';
+      }
+      final idToken = await user.getIdToken();
       final response = await http.post(
         Uri.parse(_functionUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
         body: jsonEncode({'messages': openaiMessages}),
       );
 
