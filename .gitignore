@@ -44,6 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android signing
+android/key.properties
+
 .env
 
 # Ignore built APKs

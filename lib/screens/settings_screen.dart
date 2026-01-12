@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,15 +65,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('Privacy Policy'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Add actual navigation or link opening here
+              onTap: () async {
+                final uri = Uri.parse('https://justinxhale.github.io/refereeiq-site/privacy.html');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
             ListTile(
               title: const Text('Terms of Service'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Add actual navigation or link opening here
+              onTap: () async {
+                final uri = Uri.parse('https://justinxhale.github.io/refereeiq-site/privacy.html');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               },
             ),
           ],
