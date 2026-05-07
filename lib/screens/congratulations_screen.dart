@@ -9,11 +9,11 @@ class CongratulationsScreen extends StatelessWidget {
   final int rank;
 
   const CongratulationsScreen({
-    Key? key,
+    super.key,
     required this.score,
     required this.maxScore,
     required this.rank,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

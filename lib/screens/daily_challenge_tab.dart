@@ -248,8 +248,8 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
       ),
     );
 
-    // If they tapped Refresh on that screen, reload today\'s challenge
-    if (result == \'refresh\' && mounted) {
+    // If they tapped Refresh on that screen, reload today's challenge
+    if (result == 'refresh' && mounted) {
       setState(() => _loading = true);
       await _fetchToday();
     }
