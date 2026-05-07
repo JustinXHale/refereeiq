@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -38,11 +39,11 @@ class OpenAIService {
         final data = jsonDecode(response.body);
         return (data['reply'] ?? '').toString().trim();
       } else {
-        print('Cloud Function error: ${response.statusCode} ${response.body}');
+        if (kDebugMode) print('Cloud Function error: ${response.statusCode} ${response.body}');
         return 'Sorry, something went wrong.';
       }
     } catch (e) {
-      print('Cloud Function exception: $e');
+      if (kDebugMode) print('Cloud Function exception: $e');
       return 'Sorry, I couldn\'t reach the server.';
     }
   }
@@ -65,7 +66,7 @@ class OpenAIService {
         body: jsonEncode({'incident': incidentText}),
       );
 
-      print('[incidentAnalyze] url=$_incidentAnalyzeUrl status=${response.statusCode}');
+      if (kDebugMode) print('[incidentAnalyze] url=$_incidentAnalyzeUrl status=${response.statusCode}');
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data is Map<String, dynamic>) {
         return data;
@@ -108,7 +109,7 @@ class OpenAIService {
         }),
       );
 
-      print('[incidentRuling] url=$_incidentRulingUrl status=${response.statusCode}');
+      if (kDebugMode) print('[incidentRuling] url=$_incidentRulingUrl status=${response.statusCode}');
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data is Map<String, dynamic>) {
         return data;

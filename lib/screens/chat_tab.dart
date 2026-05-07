@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -303,7 +304,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
 
     try {
       final isLikelyIncident = _isLikelyIncident(text);
-      print('[incidentFlow] isLikelyIncident=$isLikelyIncident isFollowUp=$isFollowUp');
+      if (kDebugMode) print('[incidentFlow] isLikelyIncident=$isLikelyIncident isFollowUp=$isFollowUp');
       if (isFollowUp) {
         await _handleIncidentFollowUp(
           incidentContext,

@@ -84,7 +84,7 @@ class _SourcesTabState extends State<SourcesTab>
             'path': path,
           });
         } catch (e) {
-          print('[sources] skip $path: $e');
+          if (kDebugMode) print('[sources] skip $path: $e');
         }
       }
       final categories = <String>{'All'};
@@ -103,7 +103,7 @@ class _SourcesTabState extends State<SourcesTab>
         _loadError = null;
       });
     } catch (e) {
-      print('[sources] load error: $e');
+      if (kDebugMode) print('[sources] load error: $e');
       setState(() {
         _isLoading = false;
         _loadError = 'Could not load sources.';

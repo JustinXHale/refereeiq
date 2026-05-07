@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
@@ -71,7 +72,7 @@ class AuthService {
 
       return user;
     } catch (e) {
-      print('Google Sign-In error: $e');
+      if (kDebugMode) print('Google Sign-In error: $e');
       return null;
     }
   }
@@ -126,12 +127,12 @@ class AuthService {
     try {
       await _db.collection('users').doc(uid).delete();
     } catch (e) {
-      print('Warning: failed to delete users/$uid: $e');
+      if (kDebugMode) print('Warning: failed to delete users/$uid: $e');
     }
     try {
       await _db.collection('leaderboard').doc(uid).delete();
     } catch (e) {
-      print('Warning: failed to delete leaderboard/$uid: $e');
+      if (kDebugMode) print('Warning: failed to delete leaderboard/$uid: $e');
     }
 
     // 3) Delete auth user (this will sign them out server-side)
