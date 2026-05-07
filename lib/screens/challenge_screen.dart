@@ -1,6 +1,5 @@
 // Fixed version of challenge_screen.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:RefereeIQ/screens/daily_challenge_tab.dart';
 import 'package:RefereeIQ/screens/leaderboard_tab.dart';
 import 'package:RefereeIQ/screens/history_tab.dart';

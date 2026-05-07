@@ -13,27 +13,26 @@ The ground
 | Maximum (metres) | 100 | 22 | 70 |
 | Minimum (metres) | 94 | 6 | 68 |
 
-1.3.a. The playing area is rectangular in shape.
-1.3.b. Any variations to these dimensions must be approved by the relevant union for domestic competitions or World Rugby for international matches.
-1.3.c. Where the length of the field of play is less than 100 metres, the distance between the 10-metre lines and 22-metre lines is reduced accordingly.
-1.3.d. Where the width of the playing area is less than 70 metres, the distance between the 15-metre lines is reduced accordingly.
-1.3.e. The perimeter area should not be less than five metres wide where practicable.
+- 1.3.a. The playing area is rectangular in shape.
+- 1.3.b. Any variations to these dimensions must be approved by the relevant union for domestic competitions or World Rugby for international matches.
+- 1.3.c. Where the length of the field of play is less than 100 metres, the distance between the 10-metre lines and 22-metre lines is reduced accordingly.
+- 1.3.d. Where the width of the playing area is less than 70 metres, the distance between the 15-metre lines is reduced accordingly.
+- 1.3.e. The perimeter area should not be less than five metres wide where practicable.
 
 ### Lines
 
 1.4 There are solid lines configured as shown in the ground diagram. The solid lines are on:
-
-1.4.a. The dead-ball lines and touch-in-goal lines.
-1.4.b. The try lines.
-1.4.c. The 22-metre lines.
-1.4.d. The half-way line.
-1.4.e. The touchlines.
+- 1.4.a. The dead-ball lines and touch-in-goal lines.
+- 1.4.b. The try lines.
+- 1.4.c. The 22-metre lines.
+- 1.4.d. The half-way line.
+- 1.4.e. The touchlines.
 
 1.5 There are dash lines configured as shown in the ground diagram. Each dash within a dash line is five metres in length. There are dash lines:
-1.5.a. Five metres from, and parallel to each touchlin.
-1.5.b. 15 metres from, and parallel to, each touchline
-1.5.c. 10 metres from, and parallel to, each side of th half-way line.
-1.5.d. Five metres from, and parallel to, each try line.
+- 1.5.a. Five metres from, and parallel to each touchlin.
+- 1.5.b. 15 metres from, and parallel to, each touchline
+- 1.5.c. 10 metres from, and parallel to, each side of th half-way line.
+- 1.5.d. Five metres from, and parallel to, each try line.
 
 1.6 There is one line 0.5 metres long that intersects the centre of the half-way line.
 

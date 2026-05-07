@@ -10,6 +10,7 @@ import 'package:RefereeIQ/screens/profile_screen.dart';
 import 'package:RefereeIQ/screens/settings_screen.dart';
 import 'package:RefereeIQ/screens/ask_sofia_screen.dart';
 import 'package:RefereeIQ/screens/challenge_screen.dart';
+import 'package:RefereeIQ/screens/query_history_screen.dart';
 
 class AppRoutes {
   static final Map<String, WidgetBuilder> routes = {
@@ -24,5 +25,6 @@ class AppRoutes {
     '/settings': (context) => const SettingsScreen(),
     '/ask-sofia': (context) => const AskSofiaScreen(),
     '/challenge': (context) => const ChallengeScreen(),
+    '/query-history': (context) => const QueryHistoryScreen(),
   };
 }

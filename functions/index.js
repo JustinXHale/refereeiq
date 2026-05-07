@@ -9,6 +9,7 @@ const {
   clarificationText,
 } = require('./handlers/clarifications');
 const { pingV2 } = require('./handlers/health');
+const { incidentAnalyze, incidentRuling } = require('./handlers/incident');
 
 // Scheduled tasks
 const { clarificationsNotify } = require('./tasks/clarificationsNotify');
@@ -33,6 +34,8 @@ exports.scrapeClarifications = scrapeClarifications;
 exports.clarificationsLatest = clarificationsLatest;
 exports.clarificationText = clarificationText;
 exports.pingV2 = pingV2;
+exports.incidentAnalyze = incidentAnalyze;
+exports.incidentRuling = incidentRuling;
 
 // ---------------- Export scheduled tasks ----------------
 exports.clarificationsNotify = clarificationsNotify;

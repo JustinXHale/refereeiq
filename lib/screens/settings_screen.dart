@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'query_history_screen.dart';
+import '../services/analytics_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,9 +15,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
 
   @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  void initState() {
+    super.initState();
+    AnalyticsService.logSettingsOpened();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -52,6 +58,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {
                   _notifications = value;
                 });
+              },
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Privacy & Data',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            ListTile(
+              title: const Text('Query History'),
+              subtitle: const Text('View and manage your saved queries'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const QueryHistoryScreen()),
+                );
               },
             ),
             const SizedBox(height: 16),

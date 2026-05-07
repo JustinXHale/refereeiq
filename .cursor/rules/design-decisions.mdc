@@ -1,0 +1,124 @@
+---
+description: Captures design discussions and decision rationale
+alwaysApply: false
+---
+
+# Design Decisions Tracking
+
+## Purpose
+When there's significant discussion about design approaches, create a decision document to capture the conversation, options considered, and rationale.
+
+## When to Create a Decision Document
+
+**Create when:**
+- Multiple valid design approaches exist
+- The decision significantly impacts user experience
+- Trade-offs need to be thought through
+- The discussion itself provides valuable context for future work
+- Uncertainty exists about the right approach
+
+**Examples (RefereeIQ):**
+- "Should law citations open inline in chat or jump to the full document?"
+- "Default tab when Challenge + Sources are both disabled vs enabled?"
+- "How much conversation history to persist locally vs server?"
+- "How should we handle poor network conditions for Sofia?"
+
+## Process
+
+1. **During discussion:**
+   - If the conversation is getting complex, suggest creating a decision doc
+   - "This seems like a decision worth documenting. Should I create a decision doc?"
+
+2. **Create the document:**
+   - Location: `.design/decisions/{YYYY-MM-DD}-{topic-in-kebab-case}.md`
+   - Use template below
+
+3. **Reference in design-history:**
+   - Add entry to relevant feature's design-history.md:
+   ```markdown
+   ### [Discussion] {Topic}
+   - See decision doc: `.design/decisions/{date}-{topic}.md`
+   ```
+
+## Decision Document Template
+
+```markdown
+# {Decision Title}
+
+**Date:** YYYY-MM-DD
+**Status:** Decided | Under Discussion | Deferred
+
+## Context
+What prompted this decision? What problem are we solving?
+
+## Options Considered
+
+### Option 1: {Name}
+**Pros:**
+- Advantage 1
+- Advantage 2
+
+**Cons:**
+- Disadvantage 1
+- Disadvantage 2
+
+### Option 2: {Name}
+**Pros:**
+- Advantage 1
+- Advantage 2
+
+**Cons:**
+- Disadvantage 1
+- Disadvantage 2
+
+## Decision
+What we decided and why.
+
+Align with RefereeIQ product goals (see `pubspec.yaml` description): fast, trustworthy rugby law guidance; clarity for players, coaches, fans, and referees.
+
+## Consequences
+What this means for:
+- Users
+- Product direction
+- Future decisions
+- Implementation
+
+## References
+- Product framing: `pubspec.yaml` (description) and any internal PRD you maintain
+- External resources (World Rugby / competition guidelines as applicable)
+```
+
+## Writing Style
+
+**Keep it focused:**
+- Document the decision-making process, not every detail discussed
+- Capture key trade-offs and rationale
+- Make it easy for future readers to understand why we chose this path
+
+**Be honest:**
+- Include trade-offs and downsides of chosen approach
+- Note what we're accepting as limitations
+- Document assumptions being made
+
+## Status Values
+
+- **Under Discussion** - Still exploring options
+- **Decided** - Choice made, moving forward
+- **Deferred** - Not deciding now, revisit later
+
+## Examples of Good Decision Docs
+
+**Good - Significant impact:**
+- "Citation UX in Sofia replies"
+- "Feature-flag rollout for Sources / Challenge"
+- "Offline behavior when chat API is unreachable"
+- "Authentication Method"
+
+**Not needed - Too obvious:**
+- "Button color for primary actions" (follow design system)
+- "Field label text" (just write good copy)
+- "Error message wording" (use best judgment)
+
+## Reference
+- Format guide: [.design/README.md](../.design/README.md) (create alongside `.design/` when you adopt this workflow)
+- Product description: [pubspec.yaml](../../pubspec.yaml)

@@ -13,18 +13,19 @@ The game is played only by players who are onside.
 - 10.1.d. Loitering in an offside position.
 
 10.2 A player can be offside anywhere in the playing area.
+
 10.3 A player who receives an unintentional throw forward is not offside.
 
 10.4 An offside player may be penalised, if that player:
 - 10.4.a. Does not make an effort to retreat and interferes with play; or Sanction: The non-offending team can choose either:
-- - 10.4.a.i. Penalty at the place of infringement; or
-- - 10.4.a.ii.Scrum where the offending team last played the ball.
+- 10.4.a.i. Penalty at the place of infringement; or
+- 10.4.a.ii.Scrum where the offending team last played the ball.
 - 10.4.b. Moves towards the ball; or Sanction: The non-offending team can choose either:
-- - 10.4.i. Penalty at the place of infringement; or
-- - 10.4.ii. Scrum where the offending team last played the ball.
+- 10.4.i. Penalty at the place of infringement; or
+- 10.4.ii. Scrum where the offending team last played the ball.
 - 10.4.c. Was in front of a team-mate who kicked the ball and fails to retire immediately behind an onside team-mate or an imaginary line across the field 10 metres on that player’s side from where the ball is caught or lands, even if it hits a goal post or crossbar first. If this involves more than one player, then the player closest to where the ball lands or is caught is the one penalised. This is known as the 10-metre law and still applies if the ball touches or is played by an opponent but not when the kick is charged down. Sanction: The non-offending team can choose either:
-- - 10.4.c.i. Penalty at the place of infringement; or
-- - 10.4.c.ii. Scrum where the offending team last played the ball.
+- 10.4.c.i. Penalty at the place of infringement; or
+- 10.4.c.ii. Scrum where the offending team last played the ball.
 
 10.5 A player is accidentally offside if the player cannot avoid being touched by the ball or by a team-mate who is carrying the ball. Only if the offending team gains an advantage should play stop. Sanction: Scrum.
 
@@ -35,8 +36,8 @@ The game is played only by players who are onside.
 10.7 Other than under Law 10.4c, an offside player can be put onside when:
 - 10.7.a. An onside team-mate of that player moves past the offside player and is within or has re-entered the playing area.
 - 10.7.b. An opponent of that player:
-- - 10.7.b.i. Kicks the ball; or
-- - 10.7.b.ii. Intentionally touches the ball without gaining possession of it.
+- 10.7.b.i. Kicks the ball; or
+- 10.7.b.ii. Intentionally touches the ball without gaining possession of it.
 
 10.8 A player offside under Law 10.4c cannot be put onside by any action of an opponent, apart from a charge down.
 

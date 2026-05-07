@@ -9,7 +9,6 @@ class VerifyEmailScreen extends StatefulWidget {
 }
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
-  bool _isVerified = false;
   bool _checking = false;
   final _auth = FirebaseAuth.instance;
 
@@ -24,8 +23,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     await _auth.currentUser?.reload();
     final user = _auth.currentUser;
     if (user != null && user.emailVerified) {
-      setState(() => _isVerified = true);
-      Navigator.pushReplacementNamed(context, '/complete-profile');
+      if (mounted) Navigator.pushReplacementNamed(context, '/complete-profile');
     } else {
       setState(() => _checking = false);
     }

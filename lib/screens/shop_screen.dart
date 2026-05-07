@@ -2,8 +2,6 @@
 
 import 'package:flutter/material.dart';
 import '../models/cart_item.dart';
-import 'shop_cart_screen.dart';
-import 'cart_icon_with_badge.dart';
 import 'product_bottom_sheet.dart';
 
 class ShopScreen extends StatelessWidget {

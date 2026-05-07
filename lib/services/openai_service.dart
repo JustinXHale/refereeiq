@@ -5,6 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 class OpenAIService {
   static const String _functionUrl =
       'https://chatwithgpt-s6ub2qfhfq-uc.a.run.app'; // PROD
+  static const String _incidentAnalyzeUrl =
+      'https://incidentanalyze-s6ub2qfhfq-uc.a.run.app';
+  static const String _incidentRulingUrl =
+      'https://incidentruling-s6ub2qfhfq-uc.a.run.app';
+  static const String _lawsSearchUrl =
+      'https://lawssearch-s6ub2qfhfq-uc.a.run.app';
 
   static Future<String> sendMessage(List<Map<String, dynamic>> messages) async {
     // Send ONLY user/assistant turns; server sets the system prompt.
@@ -38,6 +44,103 @@ class OpenAIService {
     } catch (e) {
       print('Cloud Function exception: $e');
       return 'Sorry, I couldn\'t reach the server.';
+    }
+  }
+
+  static Future<Map<String, dynamic>> analyzeIncident(String incidentText) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return {'error': 'Please sign in to continue.'};
+    }
+
+    final idToken = await user.getIdToken();
+
+    try {
+      final response = await http.post(
+        Uri.parse(_incidentAnalyzeUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode({'incident': incidentText}),
+      );
+
+      print('[incidentAnalyze] url=$_incidentAnalyzeUrl status=${response.statusCode}');
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data is Map<String, dynamic>) {
+        return data;
+      }
+      return {
+        'error': 'Incident analysis failed.',
+        'status': response.statusCode,
+        'body': data,
+      };
+    } catch (e) {
+      return {'error': 'Incident analysis failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getIncidentRuling(
+    String incidentText,
+    Map<String, String> answersById, {
+    String followUp = '',
+    List<Map<String, String>>? context,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return {'error': 'Please sign in to continue.'};
+    }
+
+    final idToken = await user.getIdToken();
+
+    try {
+      final response = await http.post(
+        Uri.parse(_incidentRulingUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode({
+          'incident': incidentText,
+          'answers': answersById,
+          if (followUp.trim().isNotEmpty) 'followUp': followUp,
+          if (context != null && context.isNotEmpty) 'context': context,
+        }),
+      );
+
+      print('[incidentRuling] url=$_incidentRulingUrl status=${response.statusCode}');
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data is Map<String, dynamic>) {
+        return data;
+      }
+      return {
+        'error': 'Incident assessment failed.',
+        'status': response.statusCode,
+        'body': data,
+      };
+    } catch (e) {
+      return {'error': 'Incident assessment failed: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>?> searchLawRef(String lawRef) async {
+    final query = lawRef.trim();
+    if (query.isEmpty) return null;
+
+    try {
+      final uri = Uri.parse(_lawsSearchUrl).replace(
+        queryParameters: {'q': 'Law $query', 'version': '2025.0'},
+      );
+      final response = await http.get(uri);
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      final results = data is Map<String, dynamic> ? data['results'] as List? : null;
+      if (results == null || results.isEmpty) return null;
+      final first = results.first as Map?;
+      if (first == null) return null;
+      return Map<String, dynamic>.from(first);
+    } catch (_) {
+      return null;
     }
   }
 }

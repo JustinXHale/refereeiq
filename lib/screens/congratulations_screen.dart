@@ -65,7 +65,7 @@ class CongratulationsScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  DefaultTabController.of(context)?.animateTo(1);
+                  DefaultTabController.of(context).animateTo(1);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,

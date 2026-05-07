@@ -1,0 +1,26 @@
+---
+description: Theme, ColorScheme, and contrast rules so dark mode and pickers stay readable
+globs: lib/**/*.dart
+alwaysApply: true
+---
+
+# UI theming and contrast
+
+## ColorScheme first
+
+- Prefer `Theme.of(context).colorScheme` for text and fills on cards, sheets, and chrome (`onSurface`, `onSurfaceVariant`, `surfaceContainerHighest`, `primary`, `onPrimary`).
+- Avoid a single hard-coded brand color as both badge fill **and** label ink on unknown surfaces — it can disappear on dark backgrounds. Use theme-aware pairs (`colorScheme.primary` / `onPrimary`, or surfaces + `onSurface`).
+- Avoid bare `Colors.grey[500]` / `shade500` for body or label text on dark surfaces; use `colorScheme.onSurfaceVariant` or `onSurface` with opacity.
+
+## Date / time pickers
+
+RefereeIQ currently ships a single light `ThemeData` in [`lib/theme.dart`](lib/theme.dart). When you add `showDatePicker` / `showTimePicker`, wrap them in a `Theme` copy whose `colorScheme` keeps readable ink on selected segments (avoid using seed `primary` alone as dialog ink on unknown surfaces). Prefer `Theme.of(context).colorScheme` overrides over hard-coded greys.
+
+## Dialogs and AppBar actions
+
+- Trailing AppBar actions (`TextButton.icon`, etc.) should not hug the screen edge: use sufficient end padding (e.g. `symmetric(horizontal: 12)` or `EdgeInsets.only(right: 16)`) so actions align visually with leading icon spacing.
+
+## Chips, badges, status pills
+
+- Test light and dark theme: label contrast must meet readable text on the pill background.
+- On dark grey live/event surfaces, use light label color or `colorScheme.onSurface` with a tinted border, not black-on-black.

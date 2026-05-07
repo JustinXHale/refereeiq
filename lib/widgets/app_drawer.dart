@@ -46,7 +46,7 @@ class AppDrawer extends StatelessWidget {
                           ? NetworkImage(photoURL)
                           : null,
                       child: (photoURL == null || photoURL.trim().isEmpty)
-                          ? const Icon(Icons.person, color: Colors.white)
+                          ? Icon(Icons.person, color: colorScheme.onPrimary)
                           : null,
                     ),
                     const SizedBox(width: 24),

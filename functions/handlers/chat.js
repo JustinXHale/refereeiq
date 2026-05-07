@@ -30,8 +30,10 @@ exports.chatWithGPT = onRequest(
       if (!idToken) {
         return res.status(401).json({ error: 'Unauthorized: missing ID token' });
       }
+      let uid;
       try {
-        await admin.auth().verifyIdToken(idToken);
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        uid = decodedToken.uid;
       } catch (e) {
         return res.status(401).json({ error: 'Unauthorized: invalid ID token' });
       }
@@ -45,7 +47,27 @@ exports.chatWithGPT = onRequest(
 
       try {
         const mod = await moderateText(combinedUserText, getOpenAIKey());
-        if (mod.flagged) {
+        const categories = mod.categories || {};
+        const hasOnlySportsViolence =
+          categories.violence === true &&
+          categories['violence/graphic'] !== true &&
+          !categories.hate &&
+          !categories['hate/threatening'] &&
+          !categories.harassment &&
+          !categories['harassment/threatening'] &&
+          !categories.sexual &&
+          !categories['sexual/minors'] &&
+          !categories.self_harm &&
+          !categories['self-harm'] &&
+          !categories['self-harm/intent'] &&
+          !categories['self-harm/instructions'] &&
+          !categories.illicit &&
+          !categories['illicit/violent'];
+        const looksLikeRugby =
+          /\b(rugby|tackle|ruck|maul|scrum|lineout|kick|kicker|in-goal|offside|breakdown|yellow card|red card|sin bin)\b/i
+            .test(combinedUserText);
+
+        if (mod.flagged && !(hasOnlySportsViolence && looksLikeRugby)) {
           return res.status(400).json({
             error: 'Your last message may violate content guidelines. Please rephrase.',
             categories: mod.categories,
@@ -174,7 +196,7 @@ exports.chatWithGPT = onRequest(
           const isGLDOPattern = /(attack|attacking|offen[cs]e|kicker).*(kick|kicks|kicked).*(in[\s-]?goal|ing[o|-]al).*(defen[cs]e|defender).*(ground|make[s]? (it )?dead|touch(es)? down)/i
             .test(messageText);
 
-          const baseQ = messageText.slice(0, 300);
+          const baseQ = messageText.slice(0, 180);
           const expandedQ = isGLDOPattern
             ? 'goal line drop out GLDO 12.12 in-goal grounded by defence'
             : '';
@@ -247,7 +269,40 @@ exports.chatWithGPT = onRequest(
         temperature: sofiaTemp,
       });
 
-      res.json({ reply: response.choices[0].message.content });
+      // Log query/response pair to Firestore
+      const assistantReply = response.choices[0].message.content;
+
+      // Extract law references from response
+      const lawRefs = [];
+      const lawRefPattern = /Law\s+(\d{1,2}(?:\.\d{1,2})?)/gi;
+      let match;
+      while ((match = lawRefPattern.exec(assistantReply)) !== null) {
+        if (!lawRefs.includes(match[1])) {
+          lawRefs.push(match[1]);
+        }
+      }
+
+      // Extract user's last query
+      const lastUserMessage = [...userMessages].reverse().find((m) => m?.role === 'user');
+      const userQuery = lastUserMessage?.content || '';
+
+      try {
+        await admin.firestore().collection('query_history').add({
+          uid,
+          query: userQuery.slice(0, 2000),
+          response: assistantReply.slice(0, 5000),
+          query_type: 'chat',
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          metadata: {
+            message_count: userMessages.length,
+            law_refs: lawRefs,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to log query history:', err);
+      }
+
+      res.json({ reply: assistantReply });
     } catch (err) {
       console.error('OpenAI API error:', err);
       res.status(500).send('Error communicating with OpenAI');

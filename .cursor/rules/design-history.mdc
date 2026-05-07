@@ -1,0 +1,65 @@
+---
+description: Ensures design history is recorded for all feature areas
+globs: "lib/**/*.dart"
+alwaysApply: true
+---
+
+# Design History Tracking
+
+## Purpose
+When making design-related changes (UI/UX, user flows, design decisions), record them in the appropriate `design-history.md`.
+
+## When This Applies
+- Adding, removing, or significantly changing UI screens or flows
+- Making design decisions that affect user experience
+- Descoping or deferring features
+- Updating visual design (layouts, spacing, colors)
+
+## Rule
+
+1. **Determine the code path** you're modifying (e.g., `lib/screens/ask_sofia_screen.dart` or `lib/screens/sources_tab.dart`)
+
+2. **Check** [.design/feature-mapping.md](.design/feature-mapping.md) for that path
+
+3. **If path exists in table:**
+   - Add your entry to the corresponding `design-history.md`
+   - Use format from [.design/README.md](.design/README.md)
+   - Keep it brief: 1-2 sentences, focus on UX impact
+
+4. **If path does NOT exist (new feature):**
+   - Choose a feature slug (kebab-case, e.g., `match-creation`)
+   - Add row to feature-mapping.md:
+     - Code Path: `lib/screens/` (or the subtree that owns the feature)
+     - Design Feature: "Feature Name"
+     - Design History: `.design/features/{slug}/design-history.md`
+   - Create folder: `.design/features/{slug}/`
+   - Create `design-history.md` with initial entry
+   - Then add your actual design change entry
+
+## Format
+
+```markdown
+## {YYYY-MM-DD}
+
+### [{Type}] {Brief description}
+- 1-2 sentence explanation
+- Focus on user experience, not implementation
+```
+
+**Entry types:**
+- `[Decision]` - Design choices with rationale
+- `[Update]` - UI/UX changes
+- `[Descoped]` - Features removed/deferred
+- `[Feedback]` - User testing insights
+- `[Discussion]` - Link to decision doc
+
+## What NOT to Log
+
+- Code refactoring
+- Bug fixes (unless they change UX)
+- Performance optimizations
+- Technical implementation details
+
+## Reference
+- Format guide: [.design/README.md](.design/README.md)
+- Feature mapping: [.design/feature-mapping.md](.design/feature-mapping.md)

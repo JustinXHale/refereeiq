@@ -51,7 +51,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
   bool _isFinished = false; // show “already completed” view inside the tab
   bool _isFinishing = false; // guard double-taps on Finish
   int _totalPoints = 0;
-  int? _finalRank; // optional rank (not shown on the “already completed” card)
 
   // Loading state
   bool _loading = true;
@@ -98,7 +97,6 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
         _isFinished = false;
         _isFinishing = false;
         _totalPoints = 0;
-        _finalRank = null;
       });
 
       // Restore local completion state (if user already finished this block)

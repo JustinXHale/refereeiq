@@ -7,7 +7,9 @@ import 'chat_tab.dart';
 import 'favorites_tab.dart';
 
 class AskSofiaScreen extends StatefulWidget {
-  const AskSofiaScreen({super.key});
+  final VoidCallback? onOpenSources;
+
+  const AskSofiaScreen({super.key, this.onOpenSources});
 
   @override
   State<AskSofiaScreen> createState() => _AskSofiaScreenState();
@@ -108,6 +110,7 @@ class _AskSofiaScreenState extends State<AskSofiaScreen>
                   onSaveConversation: _handleSaveConversation,
                   messages: _currentMessages,
                   onMessagesChanged: _handleMessagesChanged,
+                  onOpenSources: widget.onOpenSources,
                 ),
                 FavoritesTab(
                   favorites: _savedConversations,
