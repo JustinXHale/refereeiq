@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class CompleteProfileScreen extends StatefulWidget {
-  const CompleteProfileScreen({Key? key}) : super(key: key);
+  const CompleteProfileScreen({super.key});
 
   @override
   State<CompleteProfileScreen> createState() => _CompleteProfileScreenState();
@@ -91,6 +91,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         .doc(uid)
         .set(data, SetOptions(merge: true));
 
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/home');
   }
 

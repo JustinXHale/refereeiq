@@ -378,15 +378,14 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
         await _handleNormalChat(updatedMessages);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
       await _handleNormalChat(updatedMessages);
     }
 
-    setState(() {
-      _isThinking = false;
-    });
+    if (mounted) setState(() => _isThinking = false);
   }
 
   Future<void> _handleNormalChat(List<Map<String, dynamic>> messages) async {
@@ -906,14 +905,13 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
       widget.onMessagesChanged(updated);
       _scrollToBottom();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
       await _handleNormalChat(List<Map<String, dynamic>>.from(widget.messages));
     } finally {
-      setState(() {
-        _isThinking = false;
-      });
+      if (mounted) setState(() => _isThinking = false);
     }
   }
 

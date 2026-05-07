@@ -32,10 +32,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _resendEmail() async {
     try {
       await _auth.currentUser?.sendEmailVerification();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Verification email sent')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to send verification email')),
       );

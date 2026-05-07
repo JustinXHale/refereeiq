@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'query_history_screen.dart';
 import '../services/analytics_service.dart';
@@ -8,16 +9,40 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  _SettingsScreenState createState() => _SettingsScreenState();
+  State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
+  static const _notifKey = 'push_notifications_enabled';
 
   @override
   void initState() {
     super.initState();
     AnalyticsService.logSettingsOpened();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _notifications = prefs.getBool(_notifKey) ?? true;
+      });
+    }
+  }
+
+  Future<void> _setNotifications(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifKey, value);
+    if (mounted) setState(() => _notifications = value);
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -54,11 +79,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SwitchListTile(
               title: const Text('Push Notifications'),
               value: _notifications,
-              onChanged: (value) {
-                setState(() {
-                  _notifications = value;
-                });
-              },
+              onChanged: _setNotifications,
             ),
             const SizedBox(height: 16),
             Text(
@@ -90,22 +111,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ListTile(
               title: const Text('Privacy Policy'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () async {
-                final uri = Uri.parse('https://justinxhale.github.io/refereeiq-site/privacy.html');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
+              onTap: () => _launchUrl(
+                  'https://justinxhale.github.io/refereeiq-site/privacy.html'),
             ),
             ListTile(
               title: const Text('Terms of Service'),
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () async {
-                final uri = Uri.parse('https://justinxhale.github.io/refereeiq-site/privacy.html');
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
+              onTap: () => _launchUrl(
+                  'https://justinxhale.github.io/refereeiq-site/terms.html'),
             ),
           ],
         ),

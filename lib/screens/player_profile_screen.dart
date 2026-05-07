@@ -72,9 +72,9 @@ class PlayerProfileScreen extends StatelessWidget {
           String initials() {
             final parts = name.trim().split(RegExp(r'\s+'));
             if (parts.isEmpty) return '?';
-            if (parts.length == 1) return parts.first.isNotEmpty
-                ? parts.first[0].toUpperCase()
-                : '?';
+            if (parts.length == 1) {
+              return parts.first.isNotEmpty ? parts.first[0].toUpperCase() : '?';
+            }
             return (parts.first[0] + parts.last[0]).toUpperCase();
           }
 

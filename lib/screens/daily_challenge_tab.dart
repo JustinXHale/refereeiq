@@ -232,25 +232,26 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
             content: Text('Saved locally. Leaderboard may take a moment.')));
       }
     } finally {
-      if (!mounted) return;
-      _isFinishing = false;
+      if (mounted) setState(() => _isFinishing = false);
+    }
 
-      // Navigate to the completion screen; allow user to refresh when the next block drops
-      final result = await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChallengeCompleteScreen(
-            score: _totalPoints,
-            maxScore: _maxPoints,
-            nextDropLabel: _nextDropLabel(),
-          ),
+    if (!mounted) return;
+
+    // Navigate to the completion screen; allow user to refresh when the next block drops
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChallengeCompleteScreen(
+          score: _totalPoints,
+          maxScore: _maxPoints,
+          nextDropLabel: _nextDropLabel(),
         ),
-      );
+      ),
+    );
 
-      // If they tapped Refresh on that screen, reload today’s challenge
-      if (result == 'refresh') {
-        setState(() => _loading = true);
-        await _fetchToday();
-      }
+    // If they tapped Refresh on that screen, reload today\'s challenge
+    if (result == \'refresh\' && mounted) {
+      setState(() => _loading = true);
+      await _fetchToday();
     }
   }
 
