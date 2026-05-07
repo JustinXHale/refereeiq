@@ -56,7 +56,7 @@ class _DailyChallengeTabState extends State<DailyChallengeTab>
   bool _loading = true;
   String? _loadError;
 
-  int get _maxPoints => _questions.fold(0, (sum, q) => sum + q.points);
+  int get _maxPoints => _questions.fold(0, (acc, q) => acc + q.points);
 
   @override
   void initState() {
