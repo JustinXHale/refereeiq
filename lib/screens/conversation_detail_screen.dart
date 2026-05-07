@@ -49,7 +49,7 @@ class ConversationDetailScreen extends StatelessWidget {
                     timestamp,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: (isUser ? colorScheme.onPrimary : colorScheme.onSurface).withOpacity(0.6),
+                      color: (isUser ? colorScheme.onPrimary : colorScheme.onSurface).withValues(alpha: 0.6),
                     ),
                   ),
                 ],

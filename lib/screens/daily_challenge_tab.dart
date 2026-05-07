@@ -34,7 +34,7 @@ class ChallengeQuestion {
 }
 
 class DailyChallengeTab extends StatefulWidget {
-  const DailyChallengeTab({Key? key}) : super(key: key);
+  const DailyChallengeTab({super.key});
 
   @override
   State<DailyChallengeTab> createState() => _DailyChallengeTabState();

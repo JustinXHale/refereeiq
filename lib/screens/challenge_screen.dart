@@ -52,7 +52,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
               controller: _tabController,
               tabs: _tabs,
               labelColor: Colors.black,
-              unselectedLabelColor: Colors.black.withOpacity(0.5),
+              unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
               indicator: const BoxDecoration(
                 color: Colors.white,

@@ -73,7 +73,7 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                           selectedSize = size;
                         });
                       },
-                      selectedColor: colorScheme.primary.withOpacity(0.8),
+                      selectedColor: colorScheme.primary.withValues(alpha: 0.8),
                     );
                   }).toList(),
                 ),

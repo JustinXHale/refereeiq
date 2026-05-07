@@ -81,7 +81,7 @@ class ShopScreen extends StatelessWidget {
                             ...selectedCategories.value
                           }..toggle(category);
                         },
-                        selectedColor: colorScheme.primary.withOpacity(0.8),
+                        selectedColor: colorScheme.primary.withValues(alpha: 0.8),
                       ),
                     );
                   }).toList(),

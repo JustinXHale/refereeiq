@@ -6,11 +6,11 @@ class AffiliationDropdown extends StatelessWidget {
   final Function(String?) onChanged;
 
   const AffiliationDropdown({
-    Key? key,
+    super.key,
     required this.value,
     required this.options,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
