@@ -19,4 +19,11 @@ class FeatureFlagsService {
       return data?['sourcesEnabled'] == true;
     });
   }
+
+  Stream<bool> watchShopEnabled() {
+    return _db.collection('app_config').doc('features').snapshots().map((snap) {
+      final data = snap.data();
+      return data?['shopEnabled'] == true;
+    });
+  }
 }
