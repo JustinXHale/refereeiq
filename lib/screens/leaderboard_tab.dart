@@ -34,11 +34,15 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
   @override
   void initState() {
     super.initState();
-    _firestoreService.getAvailableStates().then((fetchedStates) {
-      setState(() {
-        states.addAll(fetchedStates);
-        isLoadingStates = false;
-      });
+    _loadStates();
+  }
+
+  Future<void> _loadStates() async {
+    final fetchedStates = await _firestoreService.getAvailableStates();
+    if (!mounted) return;
+    setState(() {
+      states.addAll(fetchedStates);
+      isLoadingStates = false;
     });
   }
 
@@ -53,48 +57,48 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
         // Filters row
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (isLoadingStates)
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+          child: isLoadingStates
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
-              else
-                ...[
-                  _buildDropdown<String>(
-                    label: 'States',
-                    value: selectedState,
-                    items: states,
-                    onChanged: (value) =>
-                        setState(() => selectedState = value!),
-                  ),
-                  const SizedBox(width: 12),
-                  _buildDropdown<String>(
-                    label: 'Affiliation',
-                    value: selectedAffiliation,
-                    items: const ['All', 'Coach', 'Fan', 'Player', 'Referee'],
-                    onChanged: (value) =>
-                        setState(() => selectedAffiliation = value!),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Sentence-case display; lowercase internal value
-                  _buildDropdown<String>(
-                    label: 'Score',
-                    value: _scoreLabels[selectedScoreType]!,
-                    items: _scoreLabels.values.toList(),
-                    onChanged: (display) {
-                      final entry = _scoreLabels.entries
-                          .firstWhere((e) => e.value == display);
-                      setState(() => selectedScoreType = entry.key);
-                    },
-                  ),
-                ],
-            ],
-          ),
+              : Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _buildDropdown<String>(
+                      label: 'States',
+                      value: selectedState,
+                      items: states,
+                      colorScheme: colorScheme,
+                      onChanged: (value) =>
+                          setState(() => selectedState = value!),
+                    ),
+                    _buildDropdown<String>(
+                      label: 'Affiliation',
+                      value: selectedAffiliation,
+                      items: const ['All', 'Coach', 'Fan', 'Player', 'Referee'],
+                      colorScheme: colorScheme,
+                      onChanged: (value) =>
+                          setState(() => selectedAffiliation = value!),
+                    ),
+                    // Sentence-case display; lowercase internal value
+                    _buildDropdown<String>(
+                      label: 'Score',
+                      value: _scoreLabels[selectedScoreType]!,
+                      items: _scoreLabels.values.toList(),
+                      colorScheme: colorScheme,
+                      onChanged: (display) {
+                        final entry = _scoreLabels.entries
+                            .firstWhere((e) => e.value == display);
+                        setState(() => selectedScoreType = entry.key);
+                      },
+                    ),
+                  ],
+                ),
         ),
 
         // Table
@@ -116,6 +120,26 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
 
               final players = (snapshot.data ?? []).take(100).toList();
 
+              if (players.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.leaderboard_outlined, size: 56, color: colorScheme.outlineVariant),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No results — try changing filters',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: SingleChildScrollView(
@@ -125,25 +149,22 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
                           (_) => colorScheme.primary,
                     ),
                     columnSpacing: 16,
-                    columns: const [
-                      DataColumn(
-                          label: Text('#', style: TextStyle(
-                              color: Colors.black))),
-                      DataColumn(
-                          label:
-                          Text('Name', style: TextStyle(color: Colors.black))),
-                      DataColumn(
-                          label:
-                          Text('D', style: TextStyle(color: Colors.black))),
-                      DataColumn(
-                          label:
-                          Text('M', style: TextStyle(color: Colors.black))),
-                      DataColumn(
-                          label:
-                          Text('L', style: TextStyle(color: Colors.black))),
-                      DataColumn(
-                          label: Text('State',
-                              style: TextStyle(color: Colors.black))),
+                    columns: [
+                      DataColumn(label: Text('#', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Name', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold))),
+                      DataColumn(label: Tooltip(
+                        message: 'Division',
+                        child: Text('D', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold)),
+                      )),
+                      DataColumn(label: Tooltip(
+                        message: 'Matches',
+                        child: Text('M', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold)),
+                      )),
+                      DataColumn(label: Tooltip(
+                        message: 'Level',
+                        child: Text('L', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold)),
+                      )),
+                      DataColumn(label: Text('State', style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold))),
                     ],
                     rows: List<DataRow>.generate(
                       players.length,
@@ -208,8 +229,10 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
     required T value,
     required List<T> items,
     required void Function(T?) onChanged,
+    required ColorScheme colorScheme,
   }) {
-    return Flexible(
+    return SizedBox(
+      width: 140,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -217,13 +240,13 @@ class _LeaderboardTabState extends State<LeaderboardTab> {
             padding: const EdgeInsets.only(left: 8.0, bottom: 4),
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButton<T>(

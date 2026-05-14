@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ConversationDetailScreen extends StatelessWidget {
   final List<Map<String, dynamic>> conversation;
@@ -24,7 +25,13 @@ class ConversationDetailScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final message = conversation[index];
           final isUser = message['sender'] == 'user';
-          final timestamp = DateFormat('h:mm a').format(message['timestamp']);
+          final raw = message['timestamp'];
+          final dt = raw is Timestamp
+              ? raw.toDate().toLocal()
+              : raw is DateTime
+                  ? raw.toLocal()
+                  : DateTime.now();
+          final timestamp = DateFormat('h:mm a').format(dt);
 
           return Align(
             alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -32,7 +39,7 @@ class ConversationDetailScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 6),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isUser ? colorScheme.primary : Colors.grey[200],
+                color: isUser ? colorScheme.primary : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(

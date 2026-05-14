@@ -42,7 +42,7 @@ class ChallengeCompleteScreen extends StatelessWidget {
               Text(
                 'Next challenge: $nextDropLabel',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+                style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 28),
               FilledButton(

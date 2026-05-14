@@ -53,11 +53,7 @@ class ShopScreen extends StatelessWidget {
 
     final ValueNotifier<Set<String>> selectedCategories = ValueNotifier({});
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('RefereeIQ Shop'),
-      ),
-      body: Column(
+    return Column(
         children: [
           // Category filters (horizontal scroll)
           Container(
@@ -81,7 +77,7 @@ class ShopScreen extends StatelessWidget {
                             ...selectedCategories.value
                           }..toggle(category);
                         },
-                        selectedColor: colorScheme.primary.withValues(alpha: 0.8),
+                        selectedColor: colorScheme.primary,
                       ),
                     );
                   }).toList(),
@@ -110,22 +106,23 @@ class ShopScreen extends StatelessWidget {
                   ),
                   itemBuilder: (context, index) {
                     final product = filteredProducts[index];
-                    return GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          builder: (context) => ProductBottomSheet(
-                            product: product,
-                            onAddToCart: onAddToCart,
-                          ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) => ProductBottomSheet(
+                              product: product,
+                              onAddToCart: onAddToCart,
+                            ),
+                          );
+                        },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -133,11 +130,11 @@ class ShopScreen extends StatelessWidget {
                             Expanded(
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.grey[300],
+                                  color: colorScheme.surfaceContainerHighest,
                                   borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.image, size: 50, color: Colors.grey),
+                                child: Center(
+                                  child: Icon(Icons.image, size: 50, color: colorScheme.outlineVariant),
                                 ),
                               ),
                             ),
@@ -159,7 +156,7 @@ class ShopScreen extends StatelessWidget {
                                     "\$${product["price"].toStringAsFixed(2)}",
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ],
@@ -175,7 +172,6 @@ class ShopScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
     );
   }
 }

@@ -26,6 +26,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
+            tooltip: 'Close',
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -34,7 +35,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
           ? Center(
         child: Text(
           'Your cart is empty',
-          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+          style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
         ),
       )
           : SafeArea(
@@ -62,7 +63,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
                           width: 90,
                           height: 90,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(Icons.image, size: 36),
@@ -104,6 +105,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
                                   const Text('Qty:'),
                                   IconButton(
                                     icon: const Icon(Icons.remove_circle_outline),
+                                    tooltip: 'Decrease quantity',
                                     onPressed: item.quantity > 1
                                         ? () => setState(() => item.quantity--)
                                         : null,
@@ -111,6 +113,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
                                   Text(item.quantity.toString()),
                                   IconButton(
                                     icon: const Icon(Icons.add_circle_outline),
+                                    tooltip: 'Increase quantity',
                                     onPressed: () => setState(() => item.quantity++),
                                   ),
                                 ],
@@ -150,7 +153,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colorScheme.primary,
-                      foregroundColor: Colors.black,
+                      foregroundColor: colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(32),
@@ -158,7 +161,7 @@ class _ShopCartScreenState extends State<ShopCartScreen> {
                     ),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Checkout not implemented yet!')),
+                        const SnackBar(content: Text('Checkout coming soon — this is a demo shop.')),
                       );
                     },
                     child: const Text(

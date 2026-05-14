@@ -1,10 +1,56 @@
 // functions/handlers/incident.js
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { getOpenAI, withOpenAISecret } = require('../services/openai');
-const { getAIConfig } = require('../config/ai');
+const { getOpenAIKey, getLiteMaaSKey, withOpenAISecret } = require('../services/openai');
+const { getAIProvider } = require('../services/aiProvider');
 const crypto = require('crypto');
 const { TAXONOMY_VERSION, INCIDENT_TAXONOMY } = require('../config/incident_taxonomy');
+
+// json_schema for incidentAnalyze — clarifications always present (empty array when not needed)
+const ANALYZE_SCHEMA = {
+  type: 'object',
+  properties: {
+    message: { type: 'string' },
+    needsClarification: { type: 'boolean' },
+    clarifications: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id:            { type: 'string' },
+          question:      { type: 'string' },
+          options:       { type: 'array', items: { type: 'string' } },
+          allowFreeText: { type: 'boolean' },
+        },
+        required: ['id', 'question', 'options', 'allowFreeText'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['message', 'needsClarification', 'clarifications'],
+  additionalProperties: false,
+};
+
+// json_schema for incidentRuling
+const RULING_SCHEMA = {
+  type: 'object',
+  properties: {
+    message: { type: 'string' },
+    assessment: {
+      type: 'object',
+      properties: {
+        decision:        { type: 'string' },
+        law_refs:        { type: 'array', items: { type: 'string' } },
+        explanation:     { type: 'string' },
+        counterfactuals: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['decision', 'law_refs', 'explanation', 'counterfactuals'],
+      additionalProperties: false,
+    },
+  },
+  required: ['message', 'assessment'],
+  additionalProperties: false,
+};
 
 try { admin.app(); } catch { admin.initializeApp(); }
 
@@ -159,20 +205,6 @@ function pickTaxonomyQuestions(incidentText) {
   }));
 }
 
-function parseJsonResponse(raw) {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {}
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start !== -1 && end !== -1 && end > start) {
-    try {
-      return JSON.parse(raw.slice(start, end + 1));
-    } catch {}
-  }
-  return null;
-}
 
 function shouldOrientIncident(incidentText) {
   const text = normalizeIncident(incidentText);
@@ -221,9 +253,7 @@ exports.incidentAnalyze = onRequest(
       }
 
 
-      const openai = getOpenAI();
-      const aiCfg = await getAIConfig();
-      const model = aiCfg.sofiaChat?.model || 'gpt-4o';
+      const provider = await getAIProvider({ OPENAI_API_KEY: getOpenAIKey(), LITEMAAS_API_KEY: getLiteMaaSKey() });
 
       const normalizedIncident = normalizeIncident(incident);
       const cacheKey = incidentHash(`${TAXONOMY_VERSION}::${normalizedIncident}`);
@@ -378,19 +408,27 @@ OR
 }
 `;
 
-      const response = await openai.chat.completions.create({
-        model,
+      const analyzeFormat = provider.supportsStructuredOutputs
+        ? { type: 'json_schema', json_schema: { name: 'incident_analyze', strict: true, schema: ANALYZE_SCHEMA } }
+        : { type: 'json_object' };
+
+      const response = await provider.client.chat.completions.create({
+        model: provider.models.chat,
         messages: [
           { role: 'system', content: system.trim() },
           { role: 'user', content: incident.slice(0, 2000) },
         ],
         temperature: 0.0,
         max_tokens: 300,
-        response_format: { type: 'json_object' },
+        response_format: analyzeFormat,
       });
 
-      const raw = response.choices?.[0]?.message?.content || '';
-      const data = parseJsonResponse(raw);
+      let data;
+      try {
+        data = JSON.parse(response.choices?.[0]?.message?.content || '');
+      } catch {
+        return res.status(500).json({ error: 'Invalid model response' });
+      }
       if (!data || typeof data !== 'object') {
         return res.status(500).json({ error: 'Invalid model response' });
       }
@@ -497,9 +535,7 @@ exports.incidentRuling = onRequest(
         return res.status(401).json({ error: 'Unauthorized: invalid ID token' });
       }
 
-      const openai = getOpenAI();
-      const aiCfg = await getAIConfig();
-      const model = aiCfg.sofiaChat?.model || 'gpt-4o';
+      const provider = await getAIProvider({ OPENAI_API_KEY: getOpenAIKey(), LITEMAAS_API_KEY: getLiteMaaSKey() });
 
       const formattedAnswers = Object.entries(answers)
         .map(([k, v]) => `- ${k}: ${String(v)}`)
@@ -557,8 +593,12 @@ Response schema:
 }
 `;
 
-      const response = await openai.chat.completions.create({
-        model,
+      const rulingFormat = provider.supportsStructuredOutputs
+        ? { type: 'json_schema', json_schema: { name: 'incident_ruling', strict: true, schema: RULING_SCHEMA } }
+        : { type: 'json_object' };
+
+      const response = await provider.client.chat.completions.create({
+        model: provider.models.chat,
         messages: [
           { role: 'system', content: system.trim() },
           {
@@ -568,17 +608,20 @@ Response schema:
         ],
         temperature: 0.2,
         max_tokens: 500,
-        response_format: { type: 'json_object' },
+        response_format: rulingFormat,
       });
 
-      const raw = response.choices?.[0]?.message?.content || '';
-      const data = parseJsonResponse(raw);
-      if (!data || typeof data !== 'object' || (!data.assessment && !data.ruling)) {
+      let data;
+      try {
+        data = JSON.parse(response.choices?.[0]?.message?.content || '');
+      } catch {
+        return res.status(500).json({ error: 'Invalid model response' });
+      }
+      if (!data || typeof data !== 'object' || !data.assessment) {
         return res.status(500).json({ error: 'Invalid model response' });
       }
 
-      // Support both new "assessment" and legacy "ruling" for backward compatibility
-      const result = data.assessment || data.ruling;
+      const result = data.assessment;
       const assessment = {
         decision: String(result.decision || result.ruling || ''),
         law_refs: Array.isArray(result.law_refs)

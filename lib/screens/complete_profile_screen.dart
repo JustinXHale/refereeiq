@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 
 class CompleteProfileScreen extends StatefulWidget {
@@ -48,6 +50,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
     final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
     final data = doc.data();
+    if (!mounted) return;
     if (data != null) {
       setState(() {
         _favoriteTeam = data['favoriteTeam'] ?? '';
@@ -69,11 +72,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     }
   }
 
+  Future<String?> _uploadToStorage(File file) async {
+    final uid = _auth.currentUser!.uid;
+    final ref = FirebaseStorage.instance.ref().child('profile_pics/$uid.jpg');
+    await ref.putFile(file);
+    return ref.getDownloadURL();
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
     final uid = _auth.currentUser!.uid;
+
+    String photoURL = _auth.currentUser?.photoURL ?? '';
+    if (_imageFile != null) {
+      photoURL = await _uploadToStorage(_imageFile!) ?? photoURL;
+    }
+
     final data = {
       'name': _name,
       'email': _auth.currentUser!.email,
@@ -81,7 +97,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       'city': _city,
       'state': _state,
       'affiliation': _affiliation,
-      'photoURL': _auth.currentUser?.photoURL ?? '',
+      'photoURL': photoURL,
     };
     if (_affiliation == 'Referee') data['refereeAssociation'] = _refereeAssociation;
     if (_affiliation == 'Player' || _affiliation == 'Coach') data['homeTeam'] = _homeTeam;
@@ -95,20 +111,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     Navigator.pushReplacementNamed(context, '/home');
   }
 
-  InputDecoration _themedInput(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Colors.black),
-      enabledBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.black),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.black, width: 2),
-      ),
-      filled: true,
-      fillColor: Colors.white,
-    );
-  }
+  InputDecoration _themedInput(String label) =>
+      InputDecoration(labelText: label);
 
   @override
   Widget build(BuildContext context) {
@@ -127,9 +131,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           PopupMenuButton<String>(
             onSelected: (value) async {
               if (value == 'logout') {
+                final nav = Navigator.of(context);
                 await FirebaseAuth.instance.signOut();
                 if (!mounted) return;
-                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                nav.pushNamedAndRemoveUntil('/', (route) => false);
               }
             },
             itemBuilder: (BuildContext context) {
@@ -150,20 +155,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           child: ListView(
             children: [
               Center(
-                child: GestureDetector(
+                child: InkWell(
                   onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 48,
-                    backgroundColor: Colors.grey[300],
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : (_auth.currentUser?.photoURL != null
-                        ? NetworkImage(_auth.currentUser!.photoURL!) as ImageProvider
-                        : null),
-                    child: _imageFile == null && _auth.currentUser?.photoURL == null
-                        ? const Icon(Icons.person, size: 48, color: Colors.black)
-                        : null,
-                  ),
+                  customBorder: const CircleBorder(),
+                  child: Builder(builder: (ctx) {
+                    final cs = Theme.of(ctx).colorScheme;
+                    return CircleAvatar(
+                      radius: 48,
+                      backgroundColor: cs.surfaceContainerHighest,
+                      backgroundImage: _imageFile != null
+                          ? FileImage(_imageFile!)
+                          : (_auth.currentUser?.photoURL != null
+                          ? CachedNetworkImageProvider(_auth.currentUser!.photoURL!)
+                          : null),
+                      child: _imageFile == null && _auth.currentUser?.photoURL == null
+                          ? Icon(Icons.person, size: 48, color: cs.onSurfaceVariant)
+                          : null,
+                    );
+                  }),
                 ),
               ),
               const SizedBox(height: 24),
@@ -202,7 +211,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     child: DropdownButtonFormField<String>(
                       decoration: _themedInput('State'),
                       hint: const Text('Choose State'),
-                      value: _state,
+                      initialValue: _state,
                       items: _usStates.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                       onChanged: (v) => setState(() => _state = v),
                       validator: (v) => v == null ? 'Required' : null,
@@ -215,7 +224,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               DropdownButtonFormField<String>(
                 decoration: _themedInput('Affiliation'),
                 hint: const Text('Choose Affiliation'),
-                value: _affiliation,
+                initialValue: _affiliation,
                 items: const [
                   'Referee', 'Player', 'Coach', 'Fan'
                 ].map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
@@ -242,10 +251,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFADC44),
-                  foregroundColor: Colors.black,
+              FilledButton(
+                style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
                 onPressed: _submit,

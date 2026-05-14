@@ -12,6 +12,7 @@ import 'package:RefereeIQ/screens/ask_sofia_screen.dart';
 import 'package:RefereeIQ/screens/challenge_screen.dart';
 import 'package:RefereeIQ/screens/query_history_screen.dart';
 import 'package:RefereeIQ/screens/shop_cart_screen.dart';
+import 'package:RefereeIQ/screens/admin_console_screen.dart';
 
 class AppRoutes {
   static final Map<String, WidgetBuilder> routes = {
@@ -28,5 +29,6 @@ class AppRoutes {
     '/challenge': (context) => const ChallengeScreen(),
     '/query-history': (context) => const QueryHistoryScreen(),
     '/shop-cart': (context) => ShopCartScreen(cart: const []),
+    '/admin': (context) => const AdminConsoleScreen(),
   };
 }

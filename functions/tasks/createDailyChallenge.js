@@ -1,6 +1,7 @@
 // Gen2 (v2) scheduler + HTTP "run now" with GPT generation (POC 5×5pts, hardened)
 
-const { getAIConfig } = require('../config/ai');
+const { getPrompts } = require('../config/ai');
+const { getAIProvider } = require('../services/aiProvider');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onRequest }  = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
@@ -15,6 +16,7 @@ setGlobalOptions({ region: 'us-central1' });
 
 // --- Secrets ---
 const OPENAI_API_KEY = defineSecret('OPENAI_API_KEY');
+const LITEMAAS_API_KEY = defineSecret('LITEMAAS_API_KEY');
 
 // --- Config ---
 const TIME_ZONE = 'America/Chicago';
@@ -67,104 +69,125 @@ function filterValid(questions) {
   return questions.filter(q => basicValidate(q) === null);
 }
 
-function extractJson(text) {
-  try { return JSON.parse(text); } catch {}
-  const m = text.match(/```json\s*([\s\S]*?)```/i);
-  if (m) { try { return JSON.parse(m[1]); } catch {} }
-  const m2 = text.match(/```\s*([\s\S]*?)```/);
-  if (m2) { try { return JSON.parse(m2[1]); } catch {} }
-  const start = text.indexOf('[');
-  const end   = text.lastIndexOf(']');
-  if (start >= 0 && end > start) {
-    try { return JSON.parse(text.slice(start, end + 1)); } catch {}
-  }
-  throw new Error('Failed to parse JSON from model response');
-}
-
-// --- OpenAI call (uses native fetch, Node 20) ---
-async function callOpenAIJSON(prompt, apiKey, { model, temperature }) {
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      temperature,
-      messages: [
-        { role: 'system', content:
-`You are Sofia, an expert Rugby Union assistant that writes fair, factual, law-accurate multiple-choice questions.
-
-OUTPUT STRICTLY JSON. No commentary, no code fences unless asked.`
+// json_schema for challenge generation (guarantees shape, eliminates post-parse validation)
+const CHALLENGE_SCHEMA = {
+  type: 'object',
+  properties: {
+    questions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          prompt:       { type: 'string' },
+          options:      { type: 'array', items: { type: 'string' } },
+          correctIndex: { type: 'integer' },
+          points:       { type: 'integer' },
+          difficulty:   { type: 'string' },
+          lawReference: { type: ['string', 'null'] },
+          videoUrl:     { type: 'null' },
         },
-        { role: 'user', content: prompt }
-      ],
-      response_format: { type: "text" }
-    }),
+        required: ['prompt', 'options', 'correctIndex', 'points', 'difficulty', 'lawReference', 'videoUrl'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['questions'],
+  additionalProperties: false,
+};
+
+// json_schema for verification step
+const VERIFY_SCHEMA = {
+  type: 'object',
+  properties: {
+    verdicts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          agree:        { type: 'boolean' },
+          correctIndex: { type: 'integer' },
+          lawOk:        { type: 'boolean' },
+        },
+        required: ['agree', 'correctIndex', 'lawOk'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['verdicts'],
+  additionalProperties: false,
+};
+
+// Generate challenge questions via AI. Returns parsed { questions: [...] }.
+async function callOpenAIJSON(prompt, provider, systemPrompt) {
+  const responseFormat = provider.supportsStructuredOutputs
+    ? { type: 'json_schema', json_schema: { name: 'daily_challenge', strict: true, schema: CHALLENGE_SCHEMA } }
+    : { type: 'json_object' };
+
+  const response = await provider.client.chat.completions.create({
+    model: provider.models.challenge,
+    temperature: provider.temperature.challenge,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: prompt },
+    ],
+    response_format: responseFormat,
   });
 
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`OpenAI HTTP ${res.status}: ${t}`);
-  }
-  const json = await res.json();
-  const content = json.choices?.[0]?.message?.content || '';
-  return extractJson(content);
+  const content = response.choices?.[0]?.message?.content || '';
+  const parsed = JSON.parse(content);
+
+  // json_schema returns { questions: [...] }; json_object fallback may return array directly
+  if (Array.isArray(parsed)) return { questions: parsed };
+  return parsed;
 }
 
-// Deterministic self-check to confirm correctIndex + law plausibility
-async function verifyQuestionsWithModel(questions, apiKey, model) {
-  const payload = {
-    model,            // use the same model you generated with (or a stricter one if you prefer)
-    temperature: 0.0, // deterministic verify
-    messages: [{
-      role: 'system',
-      content:
+// Deterministic self-check: confirm correctIndex + law plausibility
+async function verifyQuestionsWithModel(questions, provider) {
+  const responseFormat = provider.supportsStructuredOutputs
+    ? { type: 'json_schema', json_schema: { name: 'verify_challenges', strict: true, schema: VERIFY_SCHEMA } }
+    : { type: 'json_object' };
+
+  const response = await provider.client.chat.completions.create({
+    model: provider.models.challenge,
+    temperature: 0.0,
+    messages: [
+      {
+        role: 'system',
+        content:
 `You verify Rugby Union MCQs. For each question:
 - Choose the single correct option index (0..3).
 - Briefly justify via World Rugby Law reference if relevant.
-- Return STRICT JSON array of objects: { "agree": true|false, "correctIndex": number, "lawOk": true|false }.
-No prose.`
-    }, {
-      role: 'user',
-      content: JSON.stringify(questions.map(q => ({
-        prompt: q.prompt,
-        options: q.options,
-        claimedCorrectIndex: q.correctIndex,
-        lawReference: q.lawReference
-      })))
-    }]
-  };
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+- Return STRICT JSON with a "verdicts" array of objects: { "agree": true|false, "correctIndex": number, "lawOk": true|false }.
+No prose.`,
+      },
+      {
+        role: 'user',
+        content: JSON.stringify(questions.map((q) => ({
+          prompt: q.prompt,
+          options: q.options,
+          claimedCorrectIndex: q.correctIndex,
+          lawReference: q.lawReference,
+        }))),
+      },
+    ],
+    response_format: responseFormat,
   });
 
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`verify HTTP ${res.status}: ${t}`);
-  }
+  const content = response.choices?.[0]?.message?.content || '{}';
+  let parsed;
+  try { parsed = JSON.parse(content); } catch { parsed = {}; }
 
-  const data = await res.json();
-  const content = data.choices?.[0]?.message?.content || '[]';
-
-  let verdicts;
-  try { verdicts = JSON.parse(content); } catch { verdicts = []; }
+  // Normalise: accept { verdicts: [...] } or bare array (json_object fallback)
+  const verdicts = Array.isArray(parsed) ? parsed : (parsed.verdicts || []);
 
   const out = [];
   for (let i = 0; i < questions.length; i++) {
     const v = verdicts[i];
     const q = questions[i];
     if (!v || typeof v !== 'object') continue;
-
     const indexMatch = v.correctIndex === q.correctIndex;
     const lawOk = (v.lawOk === true) || q.lawReference === null;
-    const agree = v.agree === true;
-
-    if (agree && indexMatch && lawOk) out.push(q);
+    if (v.agree === true && indexMatch && lawOk) out.push(q);
   }
   return out;
 }
@@ -222,8 +245,14 @@ async function fallbackFromBank({ usedPrompts }) {
 async function generateFor({ dateId, apiKey }) {
   const outRef = db.collection('daily_challenges').doc(dateId);
 
-  // Skip if already created
-  if ((await outRef.get()).exists) {
+  // Manual override: if the doc already exists with manualOverride:true, never touch it.
+  // To set a manual challenge: write to Firestore daily_challenges/{YYYY-MM-DD-am|pm}
+  // with { manualOverride: true, questions: [...] } from the Firebase console.
+  const existing = await outRef.get();
+  if (existing.exists) {
+    if (existing.data()?.manualOverride === true) {
+      return { status: 'manual', id: dateId };
+    }
     return { status: 'exists', id: dateId };
   }
 
@@ -235,25 +264,26 @@ async function generateFor({ dateId, apiKey }) {
     otherSnap.exists ? ((otherSnap.data().questions || []).map(q => String(q.prompt))) : []
   );
 
-  // 1) Try to generate with OpenAI
+  // 1) Try to generate with AI provider
   let questions = null;
   try {
-    const prompt = buildPrompt({ usedPrompts });
-    const aiCfg = await getAIConfig();              // ← read shared config
-    const { model, temperature } = aiCfg.challenge; // e.g. gpt-4o @ 0.4
-    const raw = await callOpenAIJSON(prompt, apiKey, { model, temperature });
-    if (!Array.isArray(raw)) throw new Error('Model did not return an array');
+    const [provider, prompts] = await Promise.all([
+      getAIProvider({ OPENAI_API_KEY: apiKey, LITEMAAS_API_KEY: LITEMAAS_API_KEY.value() }),
+      getPrompts(),
+    ]);
 
-    // normalize + local shape
-    questions = filterValid(raw.map(normalize));
+    const userPrompt = buildPrompt({ usedPrompts });
+    const raw = await callOpenAIJSON(userPrompt, provider, prompts.challenge.system);
+
+    const rawQuestions = Array.isArray(raw.questions) ? raw.questions : [];
+    if (!rawQuestions.length) throw new Error('Model returned no questions');
+
+    // Add source field and normalize (json_schema guarantees shape, normalize handles source)
+    questions = filterValid(rawQuestions.map((q) => normalize(q)));
 
     // second-pass verify (deterministic)
     try {
-      const verified = await verifyQuestionsWithModel(
-        questions,
-        OPENAI_API_KEY.value(),
-        model // pass the same model you generated with (or a stricter one)
-      );
+      const verified = await verifyQuestionsWithModel(questions, provider);
       questions = verified;
     } catch (e) {
       console.warn('[daily] verify step failed:', e.message);
@@ -310,7 +340,7 @@ async function generateFor({ dateId, apiKey }) {
 
 // Scheduled (twice daily: 8:30am & 8:30pm CT)
 exports.createDailyChallenge = onSchedule(
-  { schedule: '30 8,20 * * *', timeZone: TIME_ZONE, secrets: [OPENAI_API_KEY] },
+  { schedule: '30 8,20 * * *', timeZone: TIME_ZONE, secrets: [OPENAI_API_KEY, LITEMAAS_API_KEY] },
   async () => {
     const id = todayId(new Date());
     const result = await generateFor({ dateId: id, apiKey: OPENAI_API_KEY.value() });
@@ -320,7 +350,7 @@ exports.createDailyChallenge = onSchedule(
 
 // HTTP "run now" for testing: ?date=YYYY-MM-DD&block=am|pm (both optional)
 exports.createDailyChallengeNow = onRequest(
-  { secrets: [OPENAI_API_KEY] },
+  { secrets: [OPENAI_API_KEY, LITEMAAS_API_KEY] },
   async (req, res) => {
     try {
       const date = (req.query.date || '').toString();                 // optional

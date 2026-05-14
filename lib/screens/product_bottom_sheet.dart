@@ -14,10 +14,22 @@ class ProductBottomSheet extends StatefulWidget {
 }
 
 class _ProductBottomSheetState extends State<ProductBottomSheet> {
-  String selectedSize = 'M';
+  late String selectedSize;
   int quantity = 1;
 
-  final List<String> sizes = ['XS', 'S', 'M', 'L', 'XL'];
+  List<String> get _sizes {
+    final raw = widget.product['availableSizes'];
+    if (raw is List && raw.isNotEmpty) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    return ['XS', 'S', 'M', 'L', 'XL'];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    selectedSize = _sizes.first;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,15 +48,15 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Product image
+                // Product image placeholder
                 Container(
                   height: 300,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.image, size: 100, color: Colors.grey),
+                  child: Icon(Icons.image, size: 100, color: colorScheme.outlineVariant),
                 ),
                 const SizedBox(height: 16),
                 // Product name + price
@@ -55,28 +67,23 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                 const SizedBox(height: 8),
                 Text(
                   '\$${widget.product['price'].toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 18, color: Colors.grey),
+                  style: TextStyle(fontSize: 18, color: colorScheme.onSurfaceVariant),
                 ),
-                const SizedBox(height: 24),
-                // Size selector
-                const Text('Select Size:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: sizes.map((size) {
-                    final isSelected = size == selectedSize;
-                    return ChoiceChip(
-                      label: Text(size),
-                      selected: isSelected,
-                      onSelected: (bool selected) {
-                        setState(() {
-                          selectedSize = size;
-                        });
-                      },
-                      selectedColor: colorScheme.primary.withValues(alpha: 0.8),
-                    );
-                  }).toList(),
-                ),
+                if (widget.product['availableSizes'] != null) ...[
+                  const SizedBox(height: 24),
+                  const Text('Select Size:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: _sizes.map((size) {
+                      return ChoiceChip(
+                        label: Text(size),
+                        selected: size == selectedSize,
+                        onSelected: (_) => setState(() => selectedSize = size),
+                      );
+                    }).toList(),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 // Quantity selector
                 const Text('Quantity:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -85,50 +92,33 @@ class _ProductBottomSheetState extends State<ProductBottomSheet> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: quantity > 1
-                          ? () {
-                        setState(() {
-                          quantity--;
-                        });
-                      }
-                          : null,
+                      tooltip: 'Decrease quantity',
+                      onPressed: quantity > 1 ? () => setState(() => quantity--) : null,
                     ),
                     Text(quantity.toString(), style: const TextStyle(fontSize: 18)),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () {
-                        setState(() {
-                          quantity++;
-                        });
-                      },
+                      tooltip: 'Increase quantity',
+                      onPressed: () => setState(() => quantity++),
                     ),
                   ],
                 ),
                 const SizedBox(height: 32),
                 // Add to Cart button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    onPressed: () {
-                      final item = CartItem(
-                        product: widget.product,
-                        size: selectedSize,
-                        quantity: quantity,
-                      );
-                      widget.onAddToCart(item);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Add to Cart'),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
                   ),
+                  onPressed: () {
+                    final item = CartItem(
+                      product: widget.product,
+                      size: selectedSize,
+                      quantity: quantity,
+                    );
+                    widget.onAddToCart(item);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Add to Cart'),
                 ),
               ],
             ),

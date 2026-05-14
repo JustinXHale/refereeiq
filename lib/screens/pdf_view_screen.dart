@@ -55,9 +55,19 @@ class _PdfViewScreenState extends State<PdfViewScreen> {
             const Center(child: CircularProgressIndicator()),
           if (_error != null)
             Center(
-              child: Text(
-                'Could not load PDF.',
-                style: GoogleFonts.inter(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.picture_as_pdf_outlined, size: 48, color: colorScheme.error),
+                  const SizedBox(height: 12),
+                  Text('Could not load PDF.', style: GoogleFonts.inter()),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () => setState(() => _error = null),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Try again'),
+                  ),
+                ],
               ),
             ),
         ],

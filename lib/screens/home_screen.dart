@@ -105,12 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? [CartIconWithBadge(cart: _cart)]
                               : null,
                           bottom: hasMultipleTabs
-                              ? TabBar(
-                                  tabs: tabs,
-                                  labelColor: colorScheme.onPrimary,
-                                  unselectedLabelColor:
-                                      colorScheme.onPrimary.withValues(alpha: 0.6),
-                                )
+                              ? TabBar(tabs: tabs)
                               : null,
                         ),
                         drawer: const AppDrawer(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class PlayerProfileScreen extends StatelessWidget {
   final Map<String,
@@ -37,14 +38,19 @@ class PlayerProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'RefereeIQ',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors
-              .black),
+        title: FutureBuilder<Map<String, dynamic>>(
+          future: _loadProfile(),
+          builder: (context, snap) {
+            final name = snap.data?['name'] as String?;
+            return Text(
+              name != null && name.isNotEmpty ? name : 'Profile',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            );
+          },
         ),
-        backgroundColor: colorScheme.primary,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -66,7 +72,7 @@ class PlayerProfileScreen extends StatelessWidget {
 
           ImageProvider? avatarImage;
           if (photoURL != null && photoURL.startsWith('http')) {
-            avatarImage = NetworkImage(photoURL);
+            avatarImage = CachedNetworkImageProvider(photoURL);
           }
 
           String initials() {
@@ -88,12 +94,12 @@ class PlayerProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 50,
                     backgroundImage: avatarImage,
-                    backgroundColor: Colors.grey.shade200,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
                     child: avatarImage == null
                         ? Text(initials(), style: GoogleFonts.inter(
                         fontSize: 28,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700))
+                        color: colorScheme.onSurfaceVariant))
                         : null,
                   ),
                   const SizedBox(height: 16),
@@ -102,13 +108,13 @@ class PlayerProfileScreen extends StatelessWidget {
                       fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
 
-                  _line('Location', state ?? 'N/A'),
+                  _line(context, 'Location', state ?? 'N/A'),
                   const SizedBox(height: 8),
-                  _line('Affiliation', affiliation ?? 'N/A'),
+                  _line(context, 'Affiliation', affiliation ?? 'N/A'),
                   const SizedBox(height: 8),
-                  _line('Favorite Team', favoriteTeam ?? 'N/A'),
+                  _line(context, 'Favorite Team', favoriteTeam ?? 'N/A'),
                   const SizedBox(height: 8),
-                  _line('Lifetime Points', '$lifetime'),
+                  _line(context, 'Lifetime Points', '$lifetime'),
                 ],
               ),
             ),
@@ -118,10 +124,13 @@ class PlayerProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _line(String label, String value) {
+  Widget _line(BuildContext context, String label, String value) {
     return Text(
       '$label: $value',
-      style: GoogleFonts.inter(fontSize: 16, color: Colors.grey.shade700),
+      style: GoogleFonts.inter(
+        fontSize: 16,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
       textAlign: TextAlign.center,
     );
   }

@@ -1,0 +1,22 @@
+{
+  "total_files_scanned": 48,
+  "total_findings": 2,
+  "findings": [
+    {
+      "file": "/Users/jxhale/Documents/github-repos/AppDevelopment/refereeiq/lib/screens/profile_screen.dart",
+      "line": 142,
+      "issue": "HTTP URL (non-localhost)",
+      "code": "(rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {",
+      "severity": "HIGH",
+      "recommendation": "Use HTTPS/WSS instead of HTTP/WS"
+    },
+    {
+      "file": "/Users/jxhale/Documents/github-repos/AppDevelopment/refereeiq/android/app/src/main/res/xml/network_security_config.xml",
+      "line": 0,
+      "issue": "No certificate pinning configured",
+      "code": "No <pin-set> elements found",
+      "severity": "MEDIUM",
+      "recommendation": "Configure certificate pinning for production APIs"
+    }
+  ]
+}

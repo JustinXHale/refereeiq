@@ -92,6 +92,7 @@ class _SourcesTabState extends State<SourcesTab>
       for (final doc in docs) {
         categories.add((doc['category'] ?? '').toString());
       }
+      if (!mounted) return;
       setState(() {
         _docs
           ..clear()
@@ -105,6 +106,7 @@ class _SourcesTabState extends State<SourcesTab>
       });
     } catch (e) {
       if (kDebugMode) print('[sources] load error: $e');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _loadError = 'Could not load sources.';
@@ -183,7 +185,25 @@ class _SourcesTabState extends State<SourcesTab>
           const Expanded(child: Center(child: CircularProgressIndicator()))
         else if (_loadError != null)
           Expanded(
-            child: Center(child: Text(_loadError!, style: GoogleFonts.inter())),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: colorScheme.error),
+                    const SizedBox(height: 12),
+                    Text(_loadError!, style: GoogleFonts.inter(), textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _loadLawSources,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           )
         else ...[
           Padding(
@@ -204,28 +224,30 @@ class _SourcesTabState extends State<SourcesTab>
               },
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Wrap(
-              spacing: 8,
-              children: _categories.map((category) {
-                final isSelected = _selectedCategory == category;
-                return ChoiceChip(
-                  label: Text(category),
-                  selected: isSelected,
-                  selectedColor: colorScheme.primary,
-                  onSelected: (_) {
-                    setState(() {
-                      _selectedCategory = category;
-                      _selectedSubcategory = 'All';
-                    });
-                  },
-                  labelStyle: GoogleFonts.inter(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                );
-              }).toList(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Organization',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              items: _categories
+                  .map((cat) => DropdownMenuItem(
+                        value: cat,
+                        child: Text(cat, style: GoogleFonts.inter()),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _selectedCategory = value;
+                  _selectedSubcategory = 'All';
+                });
+              },
             ),
           ),
           if (_selectedCategory != 'All' && subcategoryList.length > 1)
@@ -238,20 +260,49 @@ class _SourcesTabState extends State<SourcesTab>
                   return ChoiceChip(
                     label: Text(subcategory),
                     selected: isSelected,
-                    selectedColor: const Color(0xFFF0CF1E),
+                    selectedColor: colorScheme.primary,
                     onSelected: (_) {
                       setState(() {
                         _selectedSubcategory = subcategory;
                       });
                     },
                     labelStyle: GoogleFonts.inter(
-                      color: Colors.black,
+                      color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
                       fontWeight: FontWeight.bold,
                     ),
                   );
                 }).toList(),
               ),
             ),
+          if (filteredDocs.isEmpty && _searchQuery.isNotEmpty)
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_off, size: 48, color: colorScheme.outlineVariant),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No results for "$_searchQuery"',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(fontSize: 16),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                        child: const Text('Clear search'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -259,7 +310,7 @@ class _SourcesTabState extends State<SourcesTab>
               itemBuilder: (context, index) {
                 final doc = filteredDocs[index];
                 return Card(
-                  color: const Color(0xFFFEF7E6),
+                  color: colorScheme.primaryContainer,
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
                     title: Text(

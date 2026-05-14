@@ -23,11 +23,11 @@ class FavoritesTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start, // Align to top
             children: [
               const SizedBox(height: 80), // Push down from top
-              Icon(
+              Builder(builder: (ctx) => Icon(
                 Icons.star_border,
                 size: 64,
-                color: const Color(0xFFFADC44), // App yellow
-              ),
+                color: Theme.of(ctx).colorScheme.primary,
+              )),
               const SizedBox(height: 16),
               Text(
                 'No favorites yet',
@@ -38,11 +38,11 @@ class FavoritesTab extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tap the star icon next to a chat message to save it here for quick access.',
+                'Tap "Save Conversation" in any chat to keep it here for quick access.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 16,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -66,7 +66,7 @@ class FavoritesTab extends StatelessWidget {
 
         return ListTile(
           leading: IconButton(
-            icon: const Icon(Icons.star, color: Color(0xFFFADC44)),
+            icon: Icon(Icons.star, color: Theme.of(context).colorScheme.primary),
             onPressed: () => onToggleFavorite(index),
             tooltip: 'Remove from favorites',
           ),
@@ -80,7 +80,7 @@ class FavoritesTab extends StatelessWidget {
             timestamp,
             style: GoogleFonts.inter(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),

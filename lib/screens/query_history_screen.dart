@@ -109,13 +109,13 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFF212121),
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF212121)),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
+          tooltip: 'Back',
         ),
         actions: [
           IconButton(
@@ -134,7 +134,26 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text('Error loading history: ${snapshot.error}'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Error loading history: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => setState(() {}),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try again'),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -145,13 +164,13 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.history, size: 64, color: Theme.of(context).colorScheme.outlineVariant),
                   const SizedBox(height: 16),
                   Text(
                     'No query history yet',
                     style: GoogleFonts.inter(
                       fontSize: 18,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -185,7 +204,6 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
                                   .toUpperCase(),
                               style: const TextStyle(fontSize: 10),
                             ),
-                            backgroundColor: Colors.grey[200],
                             padding: EdgeInsets.zero,
                           ),
                           const SizedBox(width: 8),
@@ -194,16 +212,15 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
                               dateStr,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, size: 20),
                             onPressed: () => _deleteEntry(entry.id),
-                            color: Colors.red[300],
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                            color: Theme.of(context).colorScheme.error,
+                            tooltip: 'Delete entry',
                           ),
                         ],
                       ),
@@ -226,7 +243,7 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
                         'A: ${entry.response}',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 4,
                         overflow: TextOverflow.ellipsis,
@@ -244,7 +261,7 @@ class _QueryHistoryScreenState extends State<QueryHistoryScreen> {
                                       'Law $ref',
                                       style: const TextStyle(fontSize: 10),
                                     ),
-                                    backgroundColor: Colors.blue[50],
+                                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                                     padding: EdgeInsets.zero,
                                   ))
                               .toList(),

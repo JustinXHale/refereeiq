@@ -4,14 +4,37 @@ const admin = require('firebase-admin');
 // Safe init (in case this is imported before initializeApp runs)
 try { admin.app(); } catch { admin.initializeApp(); }
 
-/* ========= MODEL/TEMPERATURE DEFAULTS (edit here) ========= */
+/* ========= MODEL/TEMPERATURE DEFAULTS ========= */
+// These are the in-code fallbacks. Production values are read from Firestore.
+//
+// Firestore app_config/ai schema (provider-aware):
+//
+//   activeProvider: "openai"          ← change this to switch providers
+//   providers:
+//     openai:
+//       baseURL: "https://api.openai.com/v1"
+//       simpleChatModel: "gpt-4o-mini"   # Sofia single-turn / cheap tier
+//       chatModel: "gpt-4o"
+//       challengeModel: "gpt-4o"
+//       secretName: "OPENAI_API_KEY"
+//       temperature: { chat: 0.6, challenge: 0.4 }
+//     litemaas:
+//       baseURL: "https://your-litemaas-host/v1"
+//       chatModel: "your-subscribed-model-id"
+//       simpleChatModel: "same-or-smaller-model"
+//       challengeModel: "same-or-other-model"
+//       secretName: "LITEMAAS_API_KEY"
+//       temperature: { chat: 0.6, challenge: 0.4 }
+//
+// Handlers use getAIProvider() from services/aiProvider.js (not getAIConfig below).
+// getAIConfig() is kept for the moderation config and any legacy callers.
 const DEFAULTS = {
   challenge:  { model: 'gpt-4o', temperature: 0.4 },
   sofiaChat:  { model: 'gpt-4o', temperature: 0.6 },
   moderation: { model: 'omni-moderation-latest', temperature: 0.0 },
 };
 
-/* ========= Live overrides from Firestore: app_config/ai ========= */
+/* ========= Live overrides from Firestore: app_config/ai (flat legacy fields) ========= */
 async function getAIConfig() {
   try {
     const snap = await admin.firestore().doc('app_config/ai').get();
@@ -102,6 +125,25 @@ Never answer non-rugby questions.`,
   },
 };
 
+/* ========= Live prompt overrides from Firestore: app_config/prompts ========= */
+async function getPrompts() {
+  try {
+    const snap = await admin.firestore().doc('app_config/prompts').get();
+    if (!snap.exists) return PROMPTS;
+    const d = snap.data() || {};
+    return {
+      sofiaChat: { system: d.sofiaSystem  || PROMPTS.sofiaChat.system },
+      challenge: {
+        system:    d.challengeSystem || PROMPTS.challenge.system,
+        buildUser: PROMPTS.challenge.buildUser,
+      },
+      verify: { system: d.verifySystem || PROMPTS.verify.system },
+    };
+  } catch {
+    return PROMPTS;
+  }
+}
+
 /* ========= Convenience getters ========= */
 const getChallengeSystemPrompt = () => PROMPTS.challenge.system;
 const buildChallengeUserPrompt = (args) => PROMPTS.challenge.buildUser(args);
@@ -110,6 +152,7 @@ const getSofiaSystemPrompt = () => PROMPTS.sofiaChat.system;
 
 module.exports = {
   getAIConfig,
+  getPrompts,
   PROMPTS,
   getChallengeSystemPrompt,
   buildChallengeUserPrompt,

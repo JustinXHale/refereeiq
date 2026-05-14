@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HistoryTab extends StatefulWidget {
@@ -56,7 +56,7 @@ class _HistoryTabState extends State<HistoryTab> {
               errorBuilder: (_, __, ___) => Icon(
                 Icons.flag_outlined,
                 size: 64,
-                color: Colors.grey.shade400,
+                color: colorScheme.outlineVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -69,7 +69,7 @@ class _HistoryTabState extends State<HistoryTab> {
               'Answers unlock after the next challenge drops.\n'
                   'Next drop: ${_nextDropLabel()}',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 14, color: Colors.grey.shade700),
+              style: GoogleFonts.inter(fontSize: 14, color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 16),
             FilledButton(
@@ -84,6 +84,38 @@ class _HistoryTabState extends State<HistoryTab> {
                 await _loadHistory(); // re-query Firestore
               },
               child: Text('Refresh', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilteredEmptyState(ColorScheme colorScheme) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.filter_list_off, size: 56, color: colorScheme.outlineVariant),
+            const SizedBox(height: 16),
+            Text(
+              'No results for "${selectedLaw ?? ''}"',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try selecting a different law or clear the filter.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 14, color: colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => setState(() => selectedLaw = null),
+              child: Text('Clear filter', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -180,11 +212,13 @@ class _HistoryTabState extends State<HistoryTab> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _items = out;
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _loading = false;
         _error = 'Failed to load history: $e';
@@ -290,7 +324,7 @@ class _HistoryTabState extends State<HistoryTab> {
               Text('Correct answer: ${item['answer']}', style: GoogleFonts.inter()),
               const SizedBox(height: 6),
               if (item['lawReference'] != null)
-                Text(item['lawReference'], style: GoogleFonts.inter(color: Colors.grey.shade700)),
+                Text(item['lawReference'], style: GoogleFonts.inter(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 16),
               Text('Relevant Law Section:', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -332,7 +366,7 @@ class _HistoryTabState extends State<HistoryTab> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              value: selectedLaw,
+              initialValue: selectedLaw,
               decoration: const InputDecoration(
                 labelText: 'Filter by Law',
                 border: OutlineInputBorder(),
@@ -354,7 +388,9 @@ class _HistoryTabState extends State<HistoryTab> {
             const SizedBox(height: 16),
             Expanded(
               child: _filtered.isEmpty
-                  ? _buildHistoryEmptyState(colorScheme)
+                  ? (selectedLaw != null && _items.isNotEmpty
+                      ? _buildFilteredEmptyState(colorScheme)
+                      : _buildHistoryEmptyState(colorScheme))
                   : ListView.builder(
                 itemCount: _filtered.length,
                 itemBuilder: (context, index) {
@@ -375,16 +411,16 @@ class _HistoryTabState extends State<HistoryTab> {
                         children: [
                           const SizedBox(height: 4),
                           Text('Answer: ${item['answer']}',
-                              style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                              style: TextStyle(fontSize: 14, color: colorScheme.onSurface)),
                           const SizedBox(height: 2),
                           Row(
                             children: [
                               if (item['lawReference'] != null)
                                 Text(item['lawReference'],
-                                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                               const Spacer(),
                               Text(when,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                             ],
                           ),
                         ],

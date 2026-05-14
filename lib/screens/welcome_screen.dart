@@ -69,26 +69,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 const Spacer(),
 
-                // Google Sign-In
+                // Primary: Google Sign-In
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 12.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF212121),
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                      textStyle: GoogleFonts.inter(
-                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     onPressed: () async {
+                      final nav = Navigator.of(context);
+                      final messenger = ScaffoldMessenger.of(context);
                       final user = await AuthService().signInWithGoogle();
                       if (!mounted) return;
                       if (user != null) {
-                        Navigator.pushReplacementNamed(context, '/complete-profile');
+                        nav.pushReplacementNamed('/complete-profile');
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(
                               content: Text(
                                   'Google Sign-In failed or was canceled.')),
@@ -107,19 +103,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
 
-                // Email Sign Up
+                // Secondary: Email Sign Up
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32.0, vertical: 8.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D47A1),
-                      foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  child: FilledButton.tonal(
+                    style: FilledButton.styleFrom(
                       minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                      textStyle: GoogleFonts.inter(
-                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     onPressed: () {
                       Navigator.pushNamed(context, '/signup');
@@ -128,19 +117,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                 ),
 
-                // Email Log In
+                // Tertiary: Log In
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32.0, vertical: 8.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD600),
-                      foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                      textStyle: GoogleFonts.inter(
-                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     onPressed: () {
                       Navigator.pushNamed(context, '/login');

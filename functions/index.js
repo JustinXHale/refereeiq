@@ -28,6 +28,17 @@ const {
   ingestSupplements,
 } = require('./handlers/laws');
 
+const { cleanupUserDataOnProfileDeleted } = require('./handlers/userCleanup');
+const {
+  adminGetConfig,
+  adminUpdateFeatures,
+  adminUpdatePrompts,
+  adminUpdateAi,
+  adminListAdmins,
+  adminAddAdmin,
+  adminRemoveAdmin,
+} = require('./handlers/admin');
+
 // ---------------- Export handlers ----------------
 exports.chatWithGPT = chatWithGPT;
 exports.scrapeClarifications = scrapeClarifications;
@@ -49,3 +60,15 @@ exports.ingestLaws = ingestLaws;
 exports.lawsSearch = lawsSearch;
 exports.lawsFetchProbe = lawsFetchProbe;
 exports.ingestSupplements = ingestSupplements;
+
+// ---------------- Account deletion cascade ----------------
+exports.cleanupUserDataOnProfileDeleted = cleanupUserDataOnProfileDeleted;
+
+// ---------------- Admin console (callable) ----------------
+exports.adminGetConfig = adminGetConfig;
+exports.adminUpdateFeatures = adminUpdateFeatures;
+exports.adminUpdatePrompts = adminUpdatePrompts;
+exports.adminUpdateAi = adminUpdateAi;
+exports.adminListAdmins = adminListAdmins;
+exports.adminAddAdmin = adminAddAdmin;
+exports.adminRemoveAdmin = adminRemoveAdmin;

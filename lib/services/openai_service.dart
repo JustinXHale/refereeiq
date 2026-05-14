@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -26,22 +27,37 @@ class OpenAIService {
         return 'Please sign in to continue.';
       }
       final idToken = await user.getIdToken();
-      final response = await http.post(
-        Uri.parse(_functionUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-        body: jsonEncode({'messages': openaiMessages}),
-      );
+      final response = await http
+          .post(
+            Uri.parse(_functionUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+            },
+            body: jsonEncode({'messages': openaiMessages}),
+          )
+          .timeout(const Duration(seconds: 115));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return (data['reply'] ?? '').toString().trim();
+        final reply = (data['reply'] ?? '').toString().trim();
+        if (reply.isEmpty) {
+          return 'Sofia returned an empty reply. Try again or shorten your message.';
+        }
+        return reply;
       } else {
         if (kDebugMode) print('Cloud Function error: ${response.statusCode} ${response.body}');
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map && data['error'] != null) {
+            return data['error'].toString();
+          }
+        } catch (_) {}
         return 'Sorry, something went wrong.';
       }
+    } on TimeoutException catch (e) {
+      if (kDebugMode) print('Cloud Function exception: $e');
+      return 'That took too long and timed out. Try a shorter question or try again.';
     } catch (e) {
       if (kDebugMode) print('Cloud Function exception: $e');
       return 'Sorry, I couldn\'t reach the server.';

@@ -12,45 +12,50 @@ class CartIconWithBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = _totalItems;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Stack(
-        alignment: Alignment.topRight,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ShopCartScreen(cart: cart),
-                ),
-              );
-            },
-          ),
-          if (count > 0)
-            Positioned(
-              right: 6,
-              top: 6,
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                child: Text(
-                  count > 9 ? '9+' : '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: count > 0 ? 'Shopping cart, $count items' : 'Shopping cart',
+      child: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.shopping_cart),
+              tooltip: 'Shopping cart',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShopCartScreen(cart: cart),
                   ),
-                  textAlign: TextAlign.center,
+                );
+              },
+            ),
+            if (count > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: colorScheme.error,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: TextStyle(
+                      color: colorScheme.onError,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

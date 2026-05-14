@@ -61,15 +61,27 @@ class _AskSofiaScreenState extends State<AskSofiaScreen>
   Widget build(BuildContext context) {
     super.build(context);
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DefaultTabController(
       length: 2,
       child: Column(
         children: [
-          // Tab Bar
-          TabBar(
-            indicatorColor: Colors.black,
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
+          // Sub-tab bar with pill-style indicator. Uses explicit colors so it
+          // reads correctly on both light and dark surfaces (unlike the global
+          // tabBarTheme which is tuned for the yellow AppBar).
+          Container(
+            color: colorScheme.surfaceContainerHighest,
+            child: TabBar(
+            labelColor: colorScheme.onPrimary,
+            unselectedLabelColor: colorScheme.onSurface,
+            indicator: BoxDecoration(
+              color: colorScheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicatorPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            dividerColor: Colors.transparent,
             labelStyle: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -83,26 +95,30 @@ class _AskSofiaScreenState extends State<AskSofiaScreen>
                     const Text('Favorites'),
                     const SizedBox(width: 4),
                     if (_savedConversations.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _savedConversations.length.toString(),
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                      Builder(builder: (ctx) {
+                        final cs = Theme.of(ctx).colorScheme;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: cs.error,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                      ),
+                          child: Text(
+                            _savedConversations.length.toString(),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: cs.onError,
+                            ),
+                          ),
+                        );
+                      }),
                   ],
                 ),
               ),
             ],
           ),
+          ), // end Container (tab bar background)
           Expanded(
             child: TabBarView(
               children: [

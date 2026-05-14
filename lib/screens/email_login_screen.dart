@@ -137,25 +137,24 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _resetPassword,
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(color: Colors.black),
-                  ),
+                  child: const Text('Forgot Password?'),
                 ),
               ),
 
               const SizedBox(height: 8),
 
               // Login Button
-              ElevatedButton(
+              FilledButton(
                 onPressed: _loading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFADC44),
-                  foregroundColor: Colors.black,
+                style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
                 child: _loading
-                    ? const CircularProgressIndicator()
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Login'),
               ),
               const SizedBox(height: 16),
@@ -163,10 +162,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
               // Create Account Link
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/signup'),
-                child: const Text(
-                  "Don't have an account? Create one",
-                  style: TextStyle(color: Colors.black),
-                ),
+                child: const Text("Don't have an account? Create one"),
               ),
             ],
           ),

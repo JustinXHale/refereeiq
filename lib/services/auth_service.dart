@@ -122,7 +122,8 @@ class AuthService {
     // 1) Re-authenticate
     await _reauthenticate(user, currentPassword: currentPassword);
 
-    // 2) Delete app data (extend as needed; client can’t recurse subcollections)
+    // 2) Delete profile doc (Cloud Function cleanupUserDataOnProfileDeleted removes
+    //    query_history, challenge_attempts, sofia_chat_cache, leaderboard, Storage pics)
     final uid = user.uid;
     try {
       await _db.collection('users').doc(uid).delete();

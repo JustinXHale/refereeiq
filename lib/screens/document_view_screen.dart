@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'pdf_view_screen.dart';
@@ -54,13 +54,16 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     final isPdf = assetPath != null && assetPath.toLowerCase().endsWith('.pdf');
     if (isPdf) {
       _openedPdf = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        _openAssetPdf(
+        await _openAssetPdf(
           context,
           assetPath,
           (widget.document['title'] ?? '').toString(),
         );
+        // PDF viewer dismissed — go straight back to the sources list rather
+        // than leaving the user stranded on this intermediate screen.
+        if (mounted) Navigator.of(context).pop();
       });
     }
   }
@@ -103,13 +106,13 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                 if (href != null) _openUrl(href);
               },
               styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                p: GoogleFonts.inter(fontSize: 16, color: Colors.black),
-                h1: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold),
-                h2: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold),
-                h3: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+                p: GoogleFonts.inter(fontSize: 16, color: colorScheme.onSurface),
+                h1: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                h2: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                h3: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                 blockquote: GoogleFonts.inter(
                   fontSize: 15,
-                  color: Colors.grey.shade800,
+                  color: colorScheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
                 ),
                 blockquotePadding: const EdgeInsets.symmetric(
@@ -117,10 +120,10 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   vertical: 8,
                 ),
                 blockquoteDecoration: BoxDecoration(
-                  color: const Color(0xFFFEF7E6),
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                listBullet: GoogleFonts.inter(fontSize: 16, color: Colors.black),
+                listBullet: GoogleFonts.inter(fontSize: 16, color: colorScheme.onSurface),
                 strong: GoogleFonts.inter(fontWeight: FontWeight.w700),
                 a: GoogleFonts.inter(
                   fontSize: 16,

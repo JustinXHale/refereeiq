@@ -5,7 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/openai_service.dart';
 import '../services/analytics_service.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import '../services/connectivity_service.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChatTab extends StatefulWidget {
@@ -107,7 +108,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -138,12 +138,9 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                             ),
                             if (_hasExcerpt(canonicalRef)) ...[
                               const SizedBox(width: 8),
-                              OutlinedButton(
+                              FilledButton.tonal(
                                 onPressed: () => setState(() => showFull = !showFull),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: const Color(0xFFFADC44),
-                                  side: const BorderSide(color: Colors.black),
+                                style: FilledButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 6,
@@ -159,6 +156,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                             const Spacer(),
                             IconButton(
                               icon: const Icon(Icons.close),
+                              tooltip: 'Close',
                               onPressed: () => Navigator.of(sheetContext).pop(),
                             ),
                           ],
@@ -197,26 +195,26 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                                       h1: GoogleFonts.inter(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                       h2: GoogleFonts.inter(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black,
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                       h3: GoogleFonts.inter(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
                                       p: GoogleFonts.inter(
                                         fontSize: 14,
-                                        color: Colors.black87,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         height: 1.5,
                                       ),
                                       listBullet: GoogleFonts.inter(
                                         fontSize: 14,
-                                        color: Colors.black87,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
                                       strong: GoogleFonts.inter(
                                         fontWeight: FontWeight.w700,
@@ -502,8 +500,9 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
         : DateTime.now();
 
     final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
-    final bubbleColor = isUser ? const Color(0xFFFADC44) : Colors.grey.shade200;
-    const textColor = Colors.black;
+    final colorScheme = Theme.of(context).colorScheme;
+    final bubbleColor = isUser ? colorScheme.primary : colorScheme.surfaceContainerHighest;
+    final textColor = isUser ? colorScheme.onPrimary : colorScheme.onSurface;
 
     if (!isUser && message['type'] == 'clarification_request') {
       final clarifications = (message['clarifications'] as List? ?? [])
@@ -564,8 +563,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                                   ),
                                 ),
                                 selected: selected,
-                                selectedColor: const Color(0xFFFADC44),
-                                backgroundColor: Colors.white,
+                                selectedColor: colorScheme.primary,
                                 onSelected: resolved
                                     ? null
                                     : (_) => _setClarificationAnswer(
@@ -582,7 +580,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 }),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: resolved || _isThinking
                         ? null
                         : () => _submitClarifications(
@@ -590,18 +588,6 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                               index,
                               List<Map<String, dynamic>>.from(widget.messages),
                             ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFADC44),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      elevation: 0,
-                    ),
                     child: Text(
                       'Submit answers',
                       style: GoogleFonts.inter(
@@ -617,7 +603,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 DateFormat('h:mm a').format(ts),
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -645,7 +631,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 DateFormat('h:mm a').format(ts),
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -668,7 +654,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
             },
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                 .copyWith(
-                  p: GoogleFonts.inter(fontSize: 16, color: Colors.black),
+                  p: GoogleFonts.inter(fontSize: 16, color: colorScheme.onSurface),
                   a: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -698,7 +684,9 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
               DateFormat('h:mm a').format(ts),
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: isUser
+                    ? colorScheme.onPrimary
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -780,7 +768,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
         style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
       ),
       avatar: const Icon(Icons.library_books, size: 16),
-      backgroundColor: const Color(0xFFFEF7E6),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       onPressed: () {
         _openLawRefPopover(normalizedRef);
       },
@@ -981,20 +969,21 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
         children: _examplePrompts.map((text) {
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6.0),
-            child: GestureDetector(
-              onTap: () => _prefillAndFocus(text),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxChipWidth),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxChipWidth, minHeight: 48),
+              child: InkWell(
+                onTap: () => _prefillAndFocus(text),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFADC44),
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFF0CF1E),
+                      color: Theme.of(context).colorScheme.primary,
                       width: 1,
                     ),
                   ),
@@ -1003,7 +992,7 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                     softWrap: true,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Colors.black,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1044,39 +1033,58 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
 
-    return SafeArea(
-      top: false,
-      bottom: true,
-      child: Column(
-        children: [
-          if (widget.messages.isEmpty && !_isThinking) ...[
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.asset(
-                      'assets/icons/app_icon.png',
-                      width: 80,
-                      height: 80,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Ask Sofia anything!',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap a prompt below or type your own.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: ConnectivityService.instance.isOnline,
+      builder: (context, isOnline, _) {
+        return SafeArea(
+          top: false,
+          bottom: false,
+          child: Column(
+            children: [
+              if (!isOnline)
+                MaterialBanner(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  content: const Text('Sofia requires an internet connection'),
+                  leading: Icon(Icons.wifi_off, color: colorScheme.onSurfaceVariant),
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                  actions: [
+                    TextButton(
+                      onPressed: () => setState(() {}),
+                      child: const Text('Dismiss'),
                     ),
                   ],
+                ),
+              if (widget.messages.isEmpty && !_isThinking) ...[
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/icons/app_icon.png',
+                        width: 80,
+                        height: 80,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Ask Sofia anything!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tap a prompt below or type your own.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1122,11 +1130,10 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                 children: [
                   TextButton.icon(
                     onPressed: _saveConversation,
-                    icon: const Icon(Icons.star_border, color: Colors.black),
+                    icon: const Icon(Icons.star_border),
                     label: Text(
                       'Save Conversation',
                       style: GoogleFonts.inter(
-                        color: Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1134,11 +1141,11 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                   const SizedBox(width: 16),
                   TextButton.icon(
                     onPressed: _clearChat,
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: Icon(Icons.delete_outline, color: colorScheme.error),
                     label: Text(
                       'Clear Thread',
                       style: GoogleFonts.inter(
-                        color: Colors.red,
+                        color: colorScheme.error,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1150,7 +1157,9 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
 
           Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 8,
+              bottom: MediaQuery.of(context).viewInsets.bottom +
+                  MediaQuery.of(context).padding.bottom +
+                  8,
               left: 12,
               right: 12,
               top: 8,
@@ -1163,13 +1172,14 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                     minLines: 1,
                     maxLines: 4,
                     controller: _controller,
+                    enabled: isOnline,
                     textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _sendMessage(),
+                    onSubmitted: isOnline ? (_) => _sendMessage() : null,
                     decoration: InputDecoration(
-                      hintText: 'Ask a question, describe a scenario',
+                      hintText: isOnline ? 'Ask Sofia...' : 'No internet connection',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.grey.shade400),
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -1179,18 +1189,24 @@ class _ChatTabState extends State<ChatTab> with AutomaticKeepAliveClientMixin {
                   ),
                 ),
                 const SizedBox(width: 8),
-                FloatingActionButton(
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  onPressed: _sendMessage,
-                  mini: true,
-                  child: const Icon(Icons.send),
+                IconButton(
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: isOnline && !_isThinking ? _sendMessage : null,
+                  icon: const Icon(Icons.send),
                 ),
               ],
             ),
           ),
         ],
       ),
+        );
+      },
     );
   }
 

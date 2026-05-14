@@ -119,15 +119,17 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
               const SizedBox(height: 24),
 
               // Sign Up Button
-              ElevatedButton(
+              FilledButton(
                 onPressed: _loading ? null : _signUp,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFADC44),
-                  foregroundColor: Colors.black,
+                style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                 ),
                 child: _loading
-                    ? const CircularProgressIndicator()
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Create Account'),
               ),
               const SizedBox(height: 16),
@@ -135,10 +137,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
               // Link to Login
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/login'),
-                child: const Text(
-                  'Already have an account? Login',
-                  style: TextStyle(color: Colors.black),
-                ),
+                child: const Text('Already have an account? Login'),
               ),
             ],
           ),

@@ -43,7 +43,6 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           Container(
@@ -51,13 +50,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> with SingleTickerProv
             child: TabBar(
               controller: _tabController,
               tabs: _tabs,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
               labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              indicator: const BoxDecoration(
-                color: Colors.white,
-              ),
-              indicatorSize: TabBarIndicatorSize.tab,
             ),
           ),
           Expanded(

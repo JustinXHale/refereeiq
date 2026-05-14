@@ -17,8 +17,6 @@ class GlobalAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return AppBar(
       title: Text(
         'RefereeIQ',
@@ -31,19 +29,13 @@ class GlobalAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: true,
       actions: [
-        IconButton(
-          icon: CartIconWithBadge(
-            itemCount: cartItemCount,
-            onPressed: onCartPressed,
-          ),
+        CartIconWithBadge(
+          itemCount: cartItemCount,
           onPressed: onCartPressed,
         ),
       ],
       bottom: TabBar(
         isScrollable: false,
-        indicatorColor: colorScheme.onPrimary,
-        labelColor: colorScheme.onPrimary,
-        unselectedLabelColor: const Color(0xFF555555),
         tabs: const [
           Tab(icon: Icon(Icons.menu_book), text: 'Sources'),
           Tab(icon: Icon(Icons.chat), text: 'Ask Sofia'),

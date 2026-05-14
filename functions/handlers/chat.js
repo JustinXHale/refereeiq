@@ -2,14 +2,91 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { fetchClarifications } = require('../scraper/scrape');
-const { getOpenAI, getOpenAIKey, withOpenAISecret } = require('../services/openai');
-const { getAIConfig, getSofiaSystemPrompt } = require('../config/ai');
+const { getOpenAIKey, getLiteMaaSKey, withOpenAISecret } = require('../services/openai');
+const { getAIProvider } = require('../services/aiProvider');
+const { getPrompts } = require('../config/ai');
 const { moderateText } = require('../services/moderation');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { extractClarificationSections } = require('../scraper/parse');
+const crypto = require('crypto');
 
 try { admin.app(); } catch { admin.initializeApp(); }
+
+function normalizeSofiaQuery(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 2000);
+}
+
+/** Sofia chat: cheap tier only when single-turn, short, no law/clarification augmentation. */
+function classifySofiaChatTier(userMessages, extraSystem, messageText) {
+  if (extraSystem) return 'full';
+  const userMsgs = userMessages.filter((m) => m?.role === 'user');
+  if (userMsgs.length > 1) return 'full';
+  if (String(messageText || '').length > 500) return 'full';
+  if (userMessages.length > 3) return 'full';
+  return 'simple';
+}
+
+function extractLawRefsFromReply(text) {
+  const lawRefs = [];
+  const lawRefPattern = /Law\s+(\d{1,2}(?:\.\d{1,2})?)/gi;
+  let match;
+  while ((match = lawRefPattern.exec(text)) !== null) {
+    if (!lawRefs.includes(match[1])) lawRefs.push(match[1]);
+  }
+  return lawRefs;
+}
+
+/** OpenAI-compatible APIs may return string, null, or content-part arrays. */
+function extractAssistantText(message) {
+  if (!message) return '';
+  const c = message.content;
+  if (typeof c === 'string') return c;
+  if (c == null) return '';
+  if (Array.isArray(c)) {
+    return c
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (part && typeof part === 'object') {
+          if (part.type === 'text' && typeof part.text === 'string') return part.text;
+          if (part.type === 'output_text') {
+            if (typeof part.text === 'string') return part.text;
+            if (typeof part.output_text === 'string') return part.output_text;
+          }
+          if (typeof part.content === 'string') return part.content;
+        }
+        return '';
+      })
+      .join('');
+  }
+  if (typeof c === 'object' && c !== null) {
+    if (typeof c.text === 'string') return c.text;
+    if (typeof c.value === 'string') return c.value;
+  }
+  return '';
+}
+
+/** Some gateways use choice.text; reasoning models may fill reasoning_* when content is empty. */
+function extractAssistantTextFromChoice(choice) {
+  if (!choice) return '';
+  if (typeof choice.text === 'string' && choice.text.trim()) {
+    return choice.text.trim();
+  }
+  const msg = choice.message;
+  const fromContent = extractAssistantText(msg).trim();
+  if (fromContent) return fromContent;
+  if (!msg || typeof msg !== 'object') return '';
+  const rc = msg.reasoning_content ?? msg.reasoning;
+  if (typeof rc === 'string' && rc.trim()) {
+    const t = rc.trim();
+    return t.length > 8000 ? `${t.slice(0, 8000)}\n\n…` : t;
+  }
+  return '';
+}
 
 function getBearerToken(req) {
   const header = req.headers.authorization || '';
@@ -18,7 +95,7 @@ function getBearerToken(req) {
 }
 
 exports.chatWithGPT = onRequest(
-  { region: 'us-central1', timeoutSeconds: 60, memory: '256MiB', ...withOpenAISecret },
+  { region: 'us-central1', timeoutSeconds: 120, memory: '256MiB', ...withOpenAISecret },
   async (req, res) => {
     const userMessages = req.body?.messages;
     if (!Array.isArray(userMessages) || userMessages.length === 0) {
@@ -77,12 +154,6 @@ exports.chatWithGPT = onRequest(
         console.warn('Moderation check failed:', e?.message || e);
         // soft-fail: continue
       }
-
-      const openai = getOpenAI();
-      const aiCfg = await getAIConfig();
-      const sofiaModel = aiCfg.sofiaChat?.model || 'gpt-4o';
-      const sofiaTemp =
-        typeof aiCfg.sofiaChat?.temperature === 'number' ? aiCfg.sofiaChat.temperature : 0.6;
 
       // ---- Clarifications-aware augmentation for Sofia Chat ----
       const lastUserText =
@@ -253,8 +324,61 @@ exports.chatWithGPT = onRequest(
         console.warn('lawsSearch augmentation failed:', e?.message || e);
       }
 
-      // 2) Base system message for Sofia (centralized)
-      const sofiaSystem = { role: 'system', content: getSofiaSystemPrompt() };
+      const chatTier = classifySofiaChatTier(userMessages, extraSystem, messageText);
+      const provider = await getAIProvider(
+        { OPENAI_API_KEY: getOpenAIKey(), LITEMAAS_API_KEY: getLiteMaaSKey() },
+        { chatTier },
+      );
+      const { client: openai, models, temperature: temps } = provider;
+      const sofiaModel = models.chat;
+      const sofiaTemp = temps.chat;
+
+      const cacheEligible =
+        chatTier === 'simple' &&
+        userMessages.filter((m) => m?.role === 'user').length === 1;
+
+      let cacheRef = null;
+      if (cacheEligible) {
+        const normalized = normalizeSofiaQuery(messageText);
+        const qHash = crypto.createHash('sha256').update(`sofia_v1::${normalized}`).digest('hex');
+        cacheRef = admin.firestore().collection('sofia_chat_cache').doc(`${uid}_${qHash}`);
+        try {
+          const cacheSnap = await cacheRef.get();
+          if (cacheSnap.exists) {
+            const cached = cacheSnap.data() || {};
+            if (typeof cached.response === 'string' && cached.response.length > 0) {
+              const assistantReply = cached.response;
+              const lawRefs = extractLawRefsFromReply(assistantReply);
+              const lastUserMessage = [...userMessages].reverse().find((m) => m?.role === 'user');
+              const userQuery = lastUserMessage?.content || '';
+              try {
+                await admin.firestore().collection('query_history').add({
+                  uid,
+                  query: userQuery.slice(0, 2000),
+                  response: assistantReply.slice(0, 5000),
+                  query_type: 'chat',
+                  timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                  metadata: {
+                    message_count: userMessages.length,
+                    law_refs: lawRefs,
+                    cache_hit: true,
+                    chat_tier: chatTier,
+                  },
+                });
+              } catch (err) {
+                console.error('Failed to log query history:', err);
+              }
+              return res.json({ reply: assistantReply });
+            }
+          }
+        } catch (e) {
+          console.warn('sofia_chat_cache read failed:', e?.message || e);
+        }
+      }
+
+      // 2) Base system message for Sofia (Firestore-controlled, falls back to hardcoded)
+      const prompts = await getPrompts();
+      const sofiaSystem = { role: 'system', content: prompts.sofiaChat.system };
 
       // 3) Compose messages payload
       const messagesPayload = extraSystem
@@ -262,23 +386,54 @@ exports.chatWithGPT = onRequest(
         : [sofiaSystem, ...userMessages];
 
       // 4) Chat completion
+      // Generous cap: reasoning/thinking models can consume hundreds of "hidden" tokens
+      // before emitting visible content; a low max_tokens often yields empty message.content.
       const response = await openai.chat.completions.create({
         model: sofiaModel,
         messages: messagesPayload,
-        max_tokens: 300,
+        max_tokens: 2048,
         temperature: sofiaTemp,
       });
 
-      // Log query/response pair to Firestore
-      const assistantReply = response.choices[0].message.content;
+      const choice0 = response.choices?.[0];
+      const assistantReply = extractAssistantTextFromChoice(choice0);
 
-      // Extract law references from response
-      const lawRefs = [];
-      const lawRefPattern = /Law\s+(\d{1,2}(?:\.\d{1,2})?)/gi;
-      let match;
-      while ((match = lawRefPattern.exec(assistantReply)) !== null) {
-        if (!lawRefs.includes(match[1])) {
-          lawRefs.push(match[1]);
+      if (!assistantReply) {
+        const finish = choice0?.finish_reason ?? 'unknown';
+        let messageDebug = '';
+        try {
+          messageDebug = JSON.stringify(choice0?.message ?? null).slice(0, 1800);
+        } catch (_) {
+          messageDebug = 'unserializable';
+        }
+        console.warn('chatWithGPT empty assistant content', {
+          finish,
+          model: response.model,
+          choiceCount: response.choices?.length ?? 0,
+          messageKeys: choice0?.message && typeof choice0.message === 'object'
+            ? Object.keys(choice0.message)
+            : [],
+          messageDebug,
+        });
+        return res.status(502).json({
+          error:
+            'The AI returned an empty response. Try again, shorten your message, or check the model configuration.',
+        });
+      }
+
+      // Log query/response pair to Firestore
+      const lawRefs = extractLawRefsFromReply(assistantReply);
+
+      if (cacheRef && cacheEligible) {
+        try {
+          await cacheRef.set({
+            uid,
+            response: assistantReply,
+            chatTier,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        } catch (e) {
+          console.warn('sofia_chat_cache write failed:', e?.message || e);
         }
       }
 
@@ -296,6 +451,8 @@ exports.chatWithGPT = onRequest(
           metadata: {
             message_count: userMessages.length,
             law_refs: lawRefs,
+            cache_hit: false,
+            chat_tier: chatTier,
           },
         });
       } catch (err) {
@@ -304,8 +461,14 @@ exports.chatWithGPT = onRequest(
 
       res.json({ reply: assistantReply });
     } catch (err) {
-      console.error('OpenAI API error:', err);
-      res.status(500).send('Error communicating with OpenAI');
+      console.error('chatWithGPT error:', err);
+      const message = err?.message || String(err);
+      if (message.startsWith('AI_CONFIG:')) {
+        return res.status(400).json({
+          error: message.replace(/^AI_CONFIG:\s*/, ''),
+        });
+      }
+      res.status(500).json({ error: 'AI provider request failed.' });
     }
   }
 );

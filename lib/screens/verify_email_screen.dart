@@ -62,29 +62,31 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 8),
-            Text(email, style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+            Text(
+              email,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFADC44),
-                foregroundColor: Colors.black, // Ensures black text
+            FilledButton(
+              style: FilledButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
               ),
-              onPressed: _checkVerification,
-              child: const Text('I\'ve Verified My Email'),
+              onPressed: _checking ? null : _checkVerification,
+              child: _checking
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text("I've Verified My Email"),
             ),
             const SizedBox(height: 12),
             Center(
               child: TextButton(
                 onPressed: _resendEmail,
-                child: const Text(
-                  'Resend Verification Email',
-                  style: TextStyle(color: Colors.black), // Set text to black
-                ),
+                child: const Text('Resend Verification Email'),
               ),
             ),
           ],

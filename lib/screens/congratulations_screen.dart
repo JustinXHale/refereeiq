@@ -53,7 +53,7 @@ class CongratulationsScreen extends StatelessWidget {
                 'Rank today: #$rank',
                 style: GoogleFonts.inter(
                   fontSize: 16,
-                  color: Colors.grey.shade600,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 32),

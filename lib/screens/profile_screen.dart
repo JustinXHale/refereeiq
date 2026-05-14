@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -160,6 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _detailController.clear();
     }
 
+    if (!mounted) return;
     setState(() {});
   }
 
@@ -246,22 +248,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) =>
           AlertDialog(
-            title: const Text(
-                'Delete account?', style: TextStyle(color: Colors.black)),
+            title: const Text('Delete account?'),
             content: const Text(
               'This permanently deletes your account and profile data. This cannot be undone.',
-              style: TextStyle(color: Colors.black),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text(
-                    'Cancel', style: TextStyle(color: Colors.black)),
+                child: const Text('Cancel'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text(
-                    'Delete', style: TextStyle(color: Colors.red)),
+                child: Text('Delete', style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ),
             ],
           ),
@@ -299,44 +297,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<String?> _askForPassword() async {
-    String? password;
-    await showDialog(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Confirm Password'),
-          content: TextField(
-            controller: controller,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password'),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                    'Cancel',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-                )
+    final controller = TextEditingController();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Confirm Password'),
+            content: TextField(
+              controller: controller,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Password'),
             ),
-            TextButton(onPressed: () => Navigator.of(context).pop(),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(null),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(controller.text),
                 child: const Text(
                   'Confirm',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.red,
-                  ),
-                )
-            ),
-          ],
-        );
-      },
-    );
-    return password;
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.red),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   @override
@@ -366,9 +361,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage: _image != null
-                          ? FileImage(_image!)
-                          : (_remotePhotoUrl != null ? NetworkImage(
-                          _remotePhotoUrl!) : null) as ImageProvider?,
+                          ? FileImage(_image!) as ImageProvider
+                          : (_remotePhotoUrl != null
+                              ? CachedNetworkImageProvider(_remotePhotoUrl!)
+                              : null),
                       child: (_image == null && _remotePhotoUrl == null)
                           ? const Icon(
                           Icons.person, size: 60, color: Colors.grey)
@@ -439,7 +435,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 labelText: 'State',
                                 border: OutlineInputBorder(),
                               ),
-                              value: _state,
+                              initialValue: _state,
                               items: _states.map((s) =>
                                   DropdownMenuItem(value: s, child: Text(s)))
                                   .toList(),
@@ -459,7 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           labelText: 'Affiliation',
                           border: OutlineInputBorder(),
                         ),
-                        value: _affiliation,
+                        initialValue: _affiliation,
                         items: ['Referee', 'Player', 'Coach', 'Fan']
                             .map((a) =>
                             DropdownMenuItem(value: a, child: Text(a)))
@@ -516,8 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           onPressed: _loading ? null : _submitForm,
                           child: _loading
-                              ? const CircularProgressIndicator(color: Colors
-                              .white)
+                              ? CircularProgressIndicator(color: colorScheme.onPrimary)
                               : const Text('Save Profile'),
                         ),
 
@@ -533,11 +528,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         margin: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
-                          color: Colors.yellow.shade50,
+                          color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: colorScheme.shadow.withValues(alpha: 0.05),
                               blurRadius: 5,
                               offset: const Offset(0, 3),
                             ),
@@ -558,12 +553,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (isSelf)
                         TextButton(
                           onPressed: _loading ? null : _deleteAccount,
-                          child: const Text(
+                          child: Text(
                             'Delete Account',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.red,
+                              color: colorScheme.error,
                               decoration: TextDecoration.underline,
                             ),
                           ),
