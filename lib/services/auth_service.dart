@@ -3,6 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+/// Web OAuth client (client_type 3) from Firebase / Google Cloud — required for Google Sign-In on web.
+const String _kGoogleOAuthWebClientId =
+    '214075105239-v27mmd1fcn2jfptqpda3u2lhff6cc8ut.apps.googleusercontent.com';
+
+GoogleSignIn _googleSignIn() => GoogleSignIn(
+      clientId: kIsWeb ? _kGoogleOAuthWebClientId : null,
+    );
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -46,7 +54,7 @@ class AuthService {
 
   Future<User?> signInWithGoogle() async {
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await _googleSignIn().signIn();
       if (googleUser == null) return null;
 
       final googleAuth = await googleUser.authentication;
@@ -81,7 +89,7 @@ class AuthService {
     await _auth.signOut();
     // Optional: sign out of Google to avoid auto-pick next time
     try {
-      await GoogleSignIn().signOut();
+      await _googleSignIn().signOut();
     } catch (_) {}
   }
 
@@ -142,7 +150,7 @@ class AuthService {
     // 4) Local cleanup
     try {
       await _auth.signOut();
-      await GoogleSignIn().signOut();
+      await _googleSignIn().signOut();
     } catch (_) {}
   }
 
@@ -170,7 +178,7 @@ class AuthService {
     }
 
     if (usesGoogle) {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await _googleSignIn().signIn();
       if (googleUser == null) {
         throw FirebaseAuthException(
             code: 'user-cancelled', message: 'Reauth cancelled.');

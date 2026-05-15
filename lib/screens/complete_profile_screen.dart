@@ -1,10 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:io';
 
 class CompleteProfileScreen extends StatefulWidget {
   const CompleteProfileScreen({super.key});
@@ -24,7 +25,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   String? _affiliation;
   String _refereeAssociation = '';
   String _homeTeam = '';
-  File? _imageFile;
+  Uint8List? _pickedImageBytes;
 
   static const _usStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
@@ -66,16 +67,18 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() {
-        _imageFile = File(picked.path);
-      });
+      final bytes = await picked.readAsBytes();
+      if (mounted) setState(() => _pickedImageBytes = bytes);
     }
   }
 
-  Future<String?> _uploadToStorage(File file) async {
+  Future<String?> _uploadPickedBytes(Uint8List bytes) async {
     final uid = _auth.currentUser!.uid;
     final ref = FirebaseStorage.instance.ref().child('profile_pics/$uid.jpg');
-    await ref.putFile(file);
+    await ref.putData(
+      bytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
     return ref.getDownloadURL();
   }
 
@@ -86,8 +89,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final uid = _auth.currentUser!.uid;
 
     String photoURL = _auth.currentUser?.photoURL ?? '';
-    if (_imageFile != null) {
-      photoURL = await _uploadToStorage(_imageFile!) ?? photoURL;
+    if (_pickedImageBytes != null) {
+      photoURL = await _uploadPickedBytes(_pickedImageBytes!) ?? photoURL;
     }
 
     final data = {
@@ -163,12 +166,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     return CircleAvatar(
                       radius: 48,
                       backgroundColor: cs.surfaceContainerHighest,
-                      backgroundImage: _imageFile != null
-                          ? FileImage(_imageFile!)
+                      backgroundImage: _pickedImageBytes != null
+                          ? MemoryImage(_pickedImageBytes!)
                           : (_auth.currentUser?.photoURL != null
                           ? CachedNetworkImageProvider(_auth.currentUser!.photoURL!)
                           : null),
-                      child: _imageFile == null && _auth.currentUser?.photoURL == null
+                      child: _pickedImageBytes == null && _auth.currentUser?.photoURL == null
                           ? Icon(Icons.person, size: 48, color: cs.onSurfaceVariant)
                           : null,
                     );

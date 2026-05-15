@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -48,6 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _setNotifications(bool value) async {
+    if (kIsWeb) return;
     if (value) {
       final settings = await FirebaseMessaging.instance.requestPermission();
       if (settings.authorizationStatus != AuthorizationStatus.authorized) {
@@ -144,13 +146,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(height: 1),
-          _sectionHeader(context, 'Notifications'),
-          SwitchListTile(
-            title: const Text('Push Notifications'),
-            value: _notifications,
-            onChanged: _setNotifications,
-          ),
-          const Divider(height: 1),
+          if (!kIsWeb) ...[
+            _sectionHeader(context, 'Notifications'),
+            SwitchListTile(
+              title: const Text('Push Notifications'),
+              value: _notifications,
+              onChanged: _setNotifications,
+            ),
+            const Divider(height: 1),
+          ],
           _sectionHeader(context, 'Privacy & Data'),
           ListTile(
             title: const Text('Query History'),

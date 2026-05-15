@@ -1,6 +1,7 @@
 // profile_screen.dart — unified self/other profile with conditional editing
 
-import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -87,7 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _state;
   String? _affiliation;
   String? _remotePhotoUrl;
-  File? _image;
+  Uint8List? _pickedImageBytes;
   bool _loading = false;
   late Future<void> _loadFuture;
 
@@ -138,8 +139,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _affiliation = data['affiliation'];
 
     final rawUrl = data['photoURL'] as String?;
-    if (rawUrl != null &&
-        (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+    final uri = rawUrl != null ? Uri.tryParse(rawUrl) : null;
+    if (uri != null && uri.isScheme('https')) {
       _remotePhotoUrl = rawUrl;
     } else {
       _remotePhotoUrl = null;
@@ -171,14 +172,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final picked = await picker.pickImage(
         source: ImageSource.gallery, imageQuality: 75);
     if (picked != null) {
-      setState(() => _image = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      if (mounted) setState(() => _pickedImageBytes = bytes);
     }
   }
 
-  Future<String> _uploadToStorage(File file) async {
+  Future<String> _uploadPickedImageBytes(Uint8List bytes) async {
     final uid = _auth.currentUser!.uid;
     final ref = FirebaseStorage.instance.ref().child('profile_pics/$uid.jpg');
-    await ref.putFile(file);
+    await ref.putData(
+      bytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
     return ref.getDownloadURL();
   }
 
@@ -218,8 +223,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      if (_image != null) {
-        final url = await _uploadToStorage(_image!);
+      if (_pickedImageBytes != null) {
+        final url = await _uploadPickedImageBytes(_pickedImageBytes!);
         profile['photoURL'] = url;
         _remotePhotoUrl = url;
       }
@@ -360,12 +365,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircleAvatar(
                       radius: 60,
                       backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _image != null
-                          ? FileImage(_image!) as ImageProvider
+                      backgroundImage: _pickedImageBytes != null
+                          ? MemoryImage(_pickedImageBytes!) as ImageProvider
                           : (_remotePhotoUrl != null
                               ? CachedNetworkImageProvider(_remotePhotoUrl!)
                               : null),
-                      child: (_image == null && _remotePhotoUrl == null)
+                      child: (_pickedImageBytes == null && _remotePhotoUrl == null)
                           ? const Icon(
                           Icons.person, size: 60, color: Colors.grey)
                           : null,

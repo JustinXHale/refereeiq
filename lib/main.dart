@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -25,12 +26,22 @@ Future<void> main() async {
   }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Route all Flutter framework errors to Crashlytics.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  // Crashlytics is not wired on web (plugin surface differs); keep console reporting.
+  if (!kIsWeb) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } else {
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FlutterError.dumpErrorToConsole(FlutterErrorDetails(exception: error, stack: stack));
+      return true;
+    };
+  }
 
   // Keep Firestore cache warm for offline law lookup
   FirebaseFirestore.instance.settings = const Settings(
@@ -38,7 +49,9 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  FirebaseMessaging.onBackgroundMessage(NotificationService.firebaseMessagingBackgroundHandler);
+  if (!kIsWeb) {
+    FirebaseMessaging.onBackgroundMessage(NotificationService.firebaseMessagingBackgroundHandler);
+  }
   await NotificationService.initialize();
   await ConnectivityService.instance.init();
 

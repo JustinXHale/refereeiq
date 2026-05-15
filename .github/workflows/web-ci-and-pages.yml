@@ -1,0 +1,73 @@
+# Quality checks on PR/push; deploy Flutter Web to GitHub Pages from branch `pwa-app`.
+# Repository Settings → Pages: source = branch `gh-pages`, folder `/`.
+# Firebase Console → Authentication → Authorized domains: add `<user>.github.io` and your Pages URL.
+
+name: Web CI and Pages
+
+on:
+  push:
+    branches: [pwa-app, main]
+  pull_request:
+    branches: [pwa-app, main]
+
+concurrency:
+  group: web-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: dart analyze lib
+
+      - name: Test
+        run: flutter test
+
+      - name: Build web (smoke, default base)
+        run: flutter build web --release
+
+  deploy-pages:
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/pwa-app'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Compute base href for GitHub Project Pages
+        run: |
+          REPO="${GITHUB_REPOSITORY##*/}"
+          echo "BASE_HREF=/${REPO}/" >> $GITHUB_ENV
+
+      - name: Build web for Pages
+        run: |
+          flutter build web --release --base-href "${BASE_HREF}"
+          cp build/web/index.html build/web/404.html
+          touch build/web/.nojekyll
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: build/web

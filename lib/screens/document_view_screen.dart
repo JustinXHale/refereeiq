@@ -1,13 +1,16 @@
 // document_view_screen.dart
 
-import 'dart:io';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'pdf_view_screen.dart';
+
+import 'package:RefereeIQ/util/open_pdf_browser_stub.dart'
+    if (dart.library.html) 'package:RefereeIQ/util/open_pdf_browser.dart' as pdf_browser;
+import 'package:RefereeIQ/screens/open_asset_pdf_stub.dart'
+    if (dart.library.io) 'package:RefereeIQ/screens/open_asset_pdf_mobile.dart' as native_pdf;
 
 class DocumentViewScreen extends StatefulWidget {
   final Map<String, dynamic> document;
@@ -30,19 +33,22 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
 
   Future<void> _openAssetPdf(BuildContext context, String assetPath, String title) async {
     final data = await rootBundle.load(assetPath);
+    if (!context.mounted) return;
     final bytes = data.buffer.asUint8List();
     final filename = assetPath.split('/').last;
-    final file = File('${Directory.systemTemp.path}/$filename');
-    await file.writeAsBytes(bytes, flush: true);
+    final displayTitle = title.isEmpty ? filename : title;
+
+    if (kIsWeb) {
+      pdf_browser.openPdfBytesInBrowser(bytes, filename);
+      return;
+    }
+
     if (!context.mounted) return;
-    await Navigator.push(
+    await native_pdf.pushPdfViewFromAssetBytes(
       context,
-      MaterialPageRoute(
-        builder: (context) => PdfViewScreen(
-          filePath: file.path,
-          title: title.isEmpty ? filename : title,
-        ),
-      ),
+      bytes,
+      filename,
+      displayTitle,
     );
   }
 

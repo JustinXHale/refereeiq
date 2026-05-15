@@ -1,11 +1,11 @@
 {
-    "name": "refereeiq",
-    "short_name": "refereeiq",
+    "name": "RefereeIQ",
+    "short_name": "RefereeIQ",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0C2E55",
+    "theme_color": "#FBD823",
+    "description": "Rugby laws, explained in seconds — Ask Sofia and explore sources anywhere.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
