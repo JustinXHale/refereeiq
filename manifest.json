@@ -1,0 +1,35 @@
+{
+    "name": "RefereeIQ",
+    "short_name": "RefereeIQ",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0C2E55",
+    "theme_color": "#FBD823",
+    "description": "Rugby laws, explained in seconds — Ask Sofia and explore sources anywhere.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
